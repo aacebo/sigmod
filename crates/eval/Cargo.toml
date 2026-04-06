@@ -11,3 +11,7 @@ repository.workspace = true
 
 [lib]
 doctest = false
+
+[dependencies]
+serde.workspace = true
+serde_valid.workspace = true
