@@ -1,13 +1,9 @@
-mod facet;
-mod memory;
-mod memory_source;
-mod source;
-mod trace;
-mod trace_action;
+mod project;
+mod run;
+mod scorer;
+mod workspace;
 
-pub use facet::*;
-pub use memory::*;
-pub use memory_source::*;
-pub use source::*;
-pub use trace::*;
-pub use trace_action::*;
+pub use project::*;
+pub use run::*;
+pub use scorer::*;
+pub use workspace::*;

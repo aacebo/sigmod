@@ -3,38 +3,30 @@ use sqlx::PgPool;
 pub mod build;
 pub mod entity;
 
-mod facet_storage;
-mod memory_source_storage;
-mod memory_storage;
-mod source_storage;
-mod trace_action_storage;
-mod trace_storage;
+mod project_storage;
+mod run_storage;
+mod scorer_storage;
+mod workspace_storage;
 
-pub use facet_storage::*;
-pub use memory_source_storage::*;
-pub use memory_storage::*;
-pub use source_storage::*;
-pub use trace_action_storage::*;
-pub use trace_storage::*;
+pub use project_storage::*;
+pub use run_storage::*;
+pub use scorer_storage::*;
+pub use workspace_storage::*;
 
 pub struct Storage<'a> {
-    pub memories: MemoryStorage<'a>,
-    pub facets: FacetStorage<'a>,
-    pub sources: SourceStorage<'a>,
-    pub memory_sources: MemorySourceStorage<'a>,
-    pub traces: TraceStorage<'a>,
-    pub trace_actions: TraceActionStorage<'a>,
+    pub workspaces: WorkspaceStorage<'a>,
+    pub projects: ProjectStorage<'a>,
+    pub scorers: ScorerStorage<'a>,
+    pub runs: RunStorage<'a>,
 }
 
 impl<'a> Storage<'a> {
     pub fn new(pool: &'a PgPool) -> Self {
         Self {
-            memories: MemoryStorage::new(pool),
-            facets: FacetStorage::new(pool),
-            sources: SourceStorage::new(pool),
-            memory_sources: MemorySourceStorage::new(pool),
-            traces: TraceStorage::new(pool),
-            trace_actions: TraceActionStorage::new(pool),
+            workspaces: WorkspaceStorage::new(pool),
+            projects: ProjectStorage::new(pool),
+            scorers: ScorerStorage::new(pool),
+            runs: RunStorage::new(pool),
         }
     }
 }

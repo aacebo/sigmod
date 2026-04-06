@@ -11,7 +11,7 @@ pub struct SocketConsumer<'a> {
 
 impl<'a> SocketConsumer<'a> {
     pub fn socket(&self) -> &'a Socket {
-        &self.socket
+        self.socket
     }
 
     pub async fn dequeue<T: for<'b> serde::Deserialize<'b>>(

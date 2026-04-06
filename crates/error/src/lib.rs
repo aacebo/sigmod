@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Error {
     message: Option<String>,
     fields: BTreeMap<String, String>,

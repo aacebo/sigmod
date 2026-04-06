@@ -10,17 +10,16 @@ pub struct SocketProducer<'a> {
 
 impl<'a> SocketProducer<'a> {
     pub fn socket(&self) -> &'a Socket {
-        &self.socket
+        self.socket
     }
 
     pub async fn enqueue<TBody: serde::Serialize>(&self, event: Event<TBody>) -> Result<()> {
         let payload = serde_json::to_vec(&event)?;
-        let _ = self
-            .socket()
+        self.socket()
             .channel()
             .basic_publish(
                 event.key.exchange(),
-                &event.key.queue(),
+                event.key.queue(),
                 options::BasicPublishOptions::default(),
                 &payload,
                 protocol::basic::AMQPProperties::default()

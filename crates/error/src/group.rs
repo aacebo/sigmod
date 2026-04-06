@@ -16,7 +16,7 @@ impl ErrorGroup {
         self.0.len()
     }
 
-    pub fn add(mut self, error: Error) -> Self {
+    pub fn push(mut self, error: Error) -> Self {
         self.0.push(error);
         self
     }
