@@ -10,7 +10,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-serde.workspace = true
 amqp.path = "../../crates/amqp"
 error.path = "../../crates/error"
+serde.workspace = true
 tokio = { version = "1", features = ["full"] }
