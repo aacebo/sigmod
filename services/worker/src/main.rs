@@ -13,7 +13,9 @@ async fn main() -> Result<(), error::Error> {
         .connect()
         .await?;
 
-    let mut consumer = socket.consume(Key::new("workspace", Action::Create)).await?;
+    let mut consumer = socket
+        .consume(Key::new("workspace", Action::Create))
+        .await?;
 
     println!("waiting for messages on workspace.create...");
 
