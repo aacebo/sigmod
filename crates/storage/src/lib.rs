@@ -3,15 +3,15 @@ use sqlx::PgPool;
 pub mod build;
 pub mod entity;
 
-mod project_storage;
-mod run_storage;
-mod scorer_storage;
-mod workspace_storage;
+mod project;
+mod run;
+mod scorer;
+mod workspace;
 
-pub use project_storage::*;
-pub use run_storage::*;
-pub use scorer_storage::*;
-pub use workspace_storage::*;
+pub use project::*;
+pub use run::*;
+pub use scorer::*;
+pub use workspace::*;
 
 pub struct Storage<'a> {
     pub workspaces: WorkspaceStorage<'a>,
