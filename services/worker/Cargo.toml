@@ -1,0 +1,16 @@
+[package]
+name = "worker"
+publish.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+amqp.path = "../../crates/amqp"
+error.path = "../../crates/error"
+tokio = { version = "1", features = ["full"] }

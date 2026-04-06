@@ -1,0 +1,22 @@
+[package]
+name = "api"
+publish.workspace = true
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+actix-web = "4"
+amqp.path = "../../crates/amqp"
+error.path = "../../crates/error"
+storage.path = "../../crates/storage"
+uuid.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_valid.workspace = true
+sqlx.workspace = true
