@@ -27,8 +27,8 @@ async fn main() -> std::io::Result<()> {
 
     let amqp = amqp::new(&config.rabbitmq_url)
         .with_app_id("sigmod[api]")
-        .with_queue(Key::new("memory", Action::Create))
-        .with_queue(Key::new("memory", Action::Update))
+        .with_queue(Key::new("workspace", Action::Create))
+        .with_queue(Key::new("workspace", Action::Update))
         .connect()
         .await
         .expect("error while connecting to rabbitmq");
