@@ -5,17 +5,21 @@ use crate::{Event, Socket};
 
 #[derive(Clone)]
 pub struct SocketProducer<'a> {
-    pub(crate) socket: &'a Socket,
+    socket: &'a Socket,
 }
 
 impl<'a> SocketProducer<'a> {
+    pub(crate) fn new(socket: &'a Socket) -> Self {
+        Self { socket }
+    }
+
     pub fn socket(&self) -> &'a Socket {
         self.socket
     }
 
     pub async fn enqueue<TBody: serde::Serialize>(&self, event: Event<TBody>) -> Result<()> {
         let payload = serde_json::to_vec(&event)?;
-        self.socket()
+        self.socket
             .channel()
             .basic_publish(
                 event.key.exchange(),

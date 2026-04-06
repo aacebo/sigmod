@@ -1,15 +1,14 @@
 use std::{collections::HashMap, sync::Arc};
 
 use error::{Error, Result};
-use lapin::{Channel, Connection, ConnectionProperties, options, types};
 
 use crate::{Key, SocketConsumer, SocketProducer};
 
 #[derive(Clone)]
 pub struct Socket {
     app_id: String,
-    conn: Arc<Connection>,
-    channel: Arc<Channel>,
+    conn: Arc<lapin::Connection>,
+    channel: Arc<lapin::Channel>,
     queues: HashMap<Key, lapin::Queue>,
 }
 
@@ -18,11 +17,11 @@ impl Socket {
         &self.app_id
     }
 
-    pub fn conn(&self) -> &Connection {
+    pub fn conn(&self) -> &lapin::Connection {
         &self.conn
     }
 
-    pub fn channel(&self) -> &Channel {
+    pub fn channel(&self) -> &lapin::Channel {
         &self.channel
     }
 
@@ -40,19 +39,16 @@ impl Socket {
             .basic_consume(
                 key.queue(),
                 self.app_id(),
-                options::BasicConsumeOptions::default(),
-                types::FieldTable::default(),
+                lapin::options::BasicConsumeOptions::default(),
+                lapin::types::FieldTable::default(),
             )
             .await?;
 
-        Ok(SocketConsumer {
-            socket: self,
-            consumer,
-        })
+        Ok(SocketConsumer::new(self, consumer))
     }
 
     pub fn produce(&self) -> SocketProducer<'_> {
-        SocketProducer { socket: self }
+        SocketProducer::new(self)
     }
 }
 
@@ -82,7 +78,8 @@ impl SocketOptions {
     }
 
     pub async fn connect(self) -> Result<Socket> {
-        let conn = Connection::connect(&self.uri, ConnectionProperties::default()).await?;
+        let conn =
+            lapin::Connection::connect(&self.uri, lapin::ConnectionProperties::default()).await?;
         let channel = conn.create_channel().await?;
         let mut queues = HashMap::new();
 
@@ -91,16 +88,16 @@ impl SocketOptions {
                 .exchange_declare(
                     key.exchange(),
                     lapin::ExchangeKind::Topic,
-                    options::ExchangeDeclareOptions::default(),
-                    types::FieldTable::default(),
+                    lapin::options::ExchangeDeclareOptions::default(),
+                    lapin::types::FieldTable::default(),
                 )
                 .await?;
 
             let queue = channel
                 .queue_declare(
                     key.queue(),
-                    options::QueueDeclareOptions::default(),
-                    types::FieldTable::default(),
+                    lapin::options::QueueDeclareOptions::default(),
+                    lapin::types::FieldTable::default(),
                 )
                 .await?;
 
@@ -109,8 +106,8 @@ impl SocketOptions {
                     key.queue(),
                     key.exchange(),
                     &key.to_string(),
-                    options::QueueBindOptions::default(),
-                    types::FieldTable::default(),
+                    lapin::options::QueueBindOptions::default(),
+                    lapin::types::FieldTable::default(),
                 )
                 .await?;
 

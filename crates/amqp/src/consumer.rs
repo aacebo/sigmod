@@ -5,11 +5,15 @@ use crate::{Event, Socket};
 
 #[derive(Clone)]
 pub struct SocketConsumer<'a> {
-    pub(crate) socket: &'a Socket,
-    pub(crate) consumer: lapin::Consumer,
+    socket: &'a Socket,
+    consumer: lapin::Consumer,
 }
 
 impl<'a> SocketConsumer<'a> {
+    pub(crate) fn new(socket: &'a Socket, consumer: lapin::Consumer) -> Self {
+        Self { socket, consumer }
+    }
+
     pub fn socket(&self) -> &'a Socket {
         self.socket
     }
