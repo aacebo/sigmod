@@ -29,6 +29,12 @@ pub struct Scorer {
     #[validate(min_length = 2)]
     pub name: String,
 
+    /// Weight applied to score when calculating importance.
+    #[serde(default = "Scorer::default_weight")]
+    #[validate(minimum = 0.0)]
+    #[validate(maximum = 1.0)]
+    pub weight: f32,
+
     /// Baseline threshold for overall score acceptance
     #[serde(default = "Scorer::default_threshold")]
     #[validate(minimum = 0.0)]
@@ -51,5 +57,9 @@ pub struct Scorer {
 impl Scorer {
     fn default_threshold() -> f32 {
         0.75
+    }
+
+    fn default_weight() -> f32 {
+        1.0
     }
 }

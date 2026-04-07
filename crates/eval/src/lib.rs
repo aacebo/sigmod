@@ -52,5 +52,5 @@ pub struct EvalResult {
 }
 
 pub trait Evaluate {
-    fn evaluate(&self, req: &EvalRequest) -> EvalResult;
+    fn evaluate(&self, text: &str) -> EvalResult;
 }
