@@ -7,6 +7,10 @@ pub struct Input {
     /// the model to use.
     pub model: Model,
 
+    /// the input text being evaluated.
+    #[validate(min_length = 3)]
+    pub text: String,
+
     /// Baseline threshold for overall score acceptance
     #[serde(default = "Input::default_threshold")]
     #[validate(minimum = 0.0)]

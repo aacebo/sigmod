@@ -1,6 +1,4 @@
-use std::collections::BTreeMap;
-
-use crate::{Decision, Meta, classifier::CategoryResult};
+use crate::{Decision, Meta};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Output {
@@ -13,7 +11,4 @@ pub struct Output {
 
     /// the final decision.
     pub decision: Decision,
-
-    /// category results keyed by name.
-    pub categories: BTreeMap<String, CategoryResult>,
 }
