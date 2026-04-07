@@ -9,7 +9,7 @@ struct IndexResponse {
 }
 
 #[get("/")]
-pub async fn index(ctx: RequestContext) -> HttpResponse {
+pub async fn get(ctx: RequestContext) -> HttpResponse {
     HttpResponse::Ok().json(IndexResponse {
         start_time: ctx.start_time().to_rfc3339(),
     })

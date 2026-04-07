@@ -40,8 +40,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(ctx.clone()))
             .wrap(RequestContextMiddleware)
-            .service(routes::index)
-            .service(routes::ingest)
+            .service(routes::index::get)
+            .service(routes::evals::create)
     })
     .bind(("0.0.0.0", config.port))?
     .run()

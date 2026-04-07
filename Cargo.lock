@@ -328,6 +328,7 @@ dependencies = [
  "amqp",
  "chrono",
  "error",
+ "eval",
  "serde",
  "serde_json",
  "serde_valid",

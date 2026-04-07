@@ -1,5 +1,2 @@
-mod index;
-mod ingest;
-
-pub use index::*;
-pub use ingest::*;
+pub mod evals;
+pub mod index;
