@@ -41,7 +41,7 @@ pub struct Scorer {
     /// label categories.
     #[serde(default)]
     #[validate(min_properties = 1)]
-    pub categories: BTreeMap<String, LabelCategory>,
+    pub categories: BTreeMap<String, Category>,
 }
 
 impl Scorer {

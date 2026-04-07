@@ -1,3 +1,5 @@
+use crate::Decision;
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Label {
     /// Weight applied to score when calculating importance.
@@ -20,7 +22,7 @@ pub struct Label {
 
 impl Label {
     fn default_weight() -> f32 {
-        0.5
+        1.0
     }
 
     fn default_threshold() -> f32 {
@@ -30,15 +32,6 @@ impl Label {
 
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LabelResult {
-    /// fraction of predictions that were exactly correct.
     pub score: f32,
-
-    /// of the items the model predicted as positive, how many were actually positive.
-    pub precision: f32,
-
-    /// of the items that were actually positive, how many the model found.
-    pub recall: f32,
-
-    /// harmonic mean of precision and recall.
-    pub f1: f32,
+    pub decision: Decision,
 }
