@@ -1,7 +1,7 @@
+pub mod classifier;
 mod decision;
-mod label;
-pub mod metric;
-pub mod result;
+pub mod judge;
+mod meta;
 
 pub use decision::*;
-pub use label::*;
+pub use meta::*;

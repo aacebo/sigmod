@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Label {
     /// Weight applied to score when calculating importance
@@ -30,20 +28,17 @@ impl Label {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
-pub struct LabelCategory {
-    /// Number of top labels to consider for this category
-    #[serde(default = "LabelCategory::default_top_k")]
-    #[validate(minimum = 1)]
-    pub top_k: usize,
+#[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
+pub struct LabelResult {
+    /// fraction of predictions that were exactly correct.
+    pub score: f32,
 
-    /// Labels belonging to this category (keyed by label name)
-    #[validate(min_properties = 1)]
-    pub labels: BTreeMap<String, Label>,
-}
+    /// of the items the model predicted as positive, how many were actually positive.
+    pub precision: f32,
 
-impl LabelCategory {
-    fn default_top_k() -> usize {
-        2
-    }
+    /// of the items that were actually positive, how many the model found.
+    pub recall: f32,
+
+    /// harmonic mean of precision and recall.
+    pub f1: f32,
 }
