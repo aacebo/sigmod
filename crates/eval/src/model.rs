@@ -62,7 +62,9 @@ impl FromStr for Model {
             });
         }
 
-        Err(error::Error::new().with_message("invalid model"))
+        Err(error::Error::new()
+            .with_message("invalid model")
+            .with_field("model", s))
     }
 }
 
