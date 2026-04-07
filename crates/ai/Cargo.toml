@@ -19,4 +19,5 @@ rust-bert = "0.23"
 url = { version = "2.4", features = ["serde"] }
 reqwest = { version = "0.13", features = ["json", "query"] }
 serde.workspace = true
+serde_json.workspace = true
 async-trait.workspace = true

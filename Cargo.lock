@@ -232,6 +232,7 @@ dependencies = [
  "reqwest 0.13.2",
  "rust-bert",
  "serde",
+ "serde_json",
  "tch",
  "url",
 ]
