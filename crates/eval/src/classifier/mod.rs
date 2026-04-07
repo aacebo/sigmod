@@ -9,7 +9,7 @@ pub use label::*;
 pub use output::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
+#[serde(rename_all = "snake_case")]
 pub enum Model {
     Bart,
     Bert,
@@ -18,5 +18,6 @@ pub enum Model {
     DistilBert,
     Roberta,
     /// custom url.
+    #[serde(untagged)]
     Other(String),
 }

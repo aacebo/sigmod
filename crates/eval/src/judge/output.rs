@@ -1,4 +1,4 @@
-use crate::{Decision, Meta};
+use crate::{Decision, Meta, judge::CriterionResult};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Output {
@@ -11,4 +11,12 @@ pub struct Output {
 
     /// the final decision.
     pub decision: Decision,
+
+    /// overall reasoning from the judge.
+    #[serde(default)]
+    pub reasoning: Option<String>,
+
+    /// per-criterion results.
+    #[serde(default)]
+    pub criteria: Vec<CriterionResult>,
 }

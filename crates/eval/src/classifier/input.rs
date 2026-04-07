@@ -4,6 +4,10 @@ use crate::classifier::{LabelCategory, Model};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Input {
+    /// request identifier.
+    #[serde(default)]
+    pub request_id: Option<String>,
+
     /// the model to use.
     pub model: Model,
 
