@@ -7,14 +7,14 @@ pub use decision::*;
 pub use meta::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Scorer {
     Classifier(classifier::Scorer),
     Judge(judge::Scorer),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum ScorerOutput {
     Classifier(classifier::Output),
     Judge(judge::Output),
