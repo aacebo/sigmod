@@ -29,6 +29,11 @@ pub struct Scorer {
     #[validate(min_length = 2)]
     pub name: String,
 
+    /// Number of top labels to consider for this category
+    #[serde(default)]
+    #[validate(minimum = 1)]
+    pub top_k: Option<usize>,
+
     /// Weight applied to score when calculating importance.
     #[serde(default = "Scorer::default_weight")]
     #[validate(minimum = 0.0)]
@@ -56,7 +61,7 @@ pub struct Scorer {
 
 impl Scorer {
     fn default_threshold() -> f32 {
-        0.75
+        0.7
     }
 
     fn default_weight() -> f32 {

@@ -12,6 +12,12 @@ pub struct Category {
     #[validate(minimum = 1)]
     pub top_k: usize,
 
+    /// Weight applied to score when calculating importance.
+    #[serde(default = "Category::default_weight")]
+    #[validate(minimum = 0.0)]
+    #[validate(maximum = 1.0)]
+    pub weight: f32,
+
     /// Baseline threshold for overall score acceptance
     #[serde(default = "Category::default_threshold")]
     #[validate(minimum = 0.0)]
@@ -28,8 +34,12 @@ impl Category {
         2
     }
 
+    fn default_weight() -> f32 {
+        1.0
+    }
+
     fn default_threshold() -> f32 {
-        0.75
+        0.7
     }
 }
 
