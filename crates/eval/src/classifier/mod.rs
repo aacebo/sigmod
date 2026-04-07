@@ -8,19 +8,7 @@ pub use output::*;
 
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Model {
-    Bart,
-    Bert,
-    Deberta,
-    DebertaV2,
-    DistilBert,
-    Roberta,
-    /// custom url.
-    #[serde(untagged)]
-    Other(String),
-}
+use crate::Model;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Scorer {

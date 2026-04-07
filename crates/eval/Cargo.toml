@@ -16,6 +16,7 @@ doctest = false
 tch = { version = "0.17" }
 console = { version = "0.16", features = ["std"] }
 rust-bert = { version = "0.23" }
+error.path = "../error"
 serde.workspace = true
 serde_json.workspace = true
 serde_valid.workspace = true

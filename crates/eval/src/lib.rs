@@ -2,9 +2,11 @@ pub mod classifier;
 mod decision;
 pub mod judge;
 mod meta;
+mod model;
 
 pub use decision::*;
 pub use meta::*;
+pub use model::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 #[serde(tag = "type", rename_all = "snake_case")]

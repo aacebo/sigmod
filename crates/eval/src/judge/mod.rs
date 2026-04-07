@@ -6,19 +6,7 @@ pub use output::*;
 
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Model {
-    Gpt,
-    Gpt2,
-    GptJ,
-    GptNeo,
-    XlNet,
-    Reformer,
-    T5,
-    #[serde(untagged)]
-    Other(String),
-}
+use crate::Model;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Scorer {

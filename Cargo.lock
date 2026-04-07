@@ -1144,6 +1144,7 @@ name = "eval"
 version = "0.0.0"
 dependencies = [
  "console",
+ "error",
  "rust-bert",
  "serde",
  "serde_json",
