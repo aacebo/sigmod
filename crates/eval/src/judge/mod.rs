@@ -40,6 +40,7 @@ pub struct Scorer {
 
     /// criteria the judge evaluates against.
     #[serde(default)]
+    #[validate(min_items = 1)]
     pub criteria: Vec<Criterion>,
 
     /// options set to the LLM when applicable.
