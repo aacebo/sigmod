@@ -17,7 +17,7 @@ pub struct LabelResult {
 }
 
 #[async_trait]
-pub trait ClassificationModel: Send + Sync {
+pub trait ClassificationClient: Send + Sync {
     async fn predict(
         &self,
         inputs: &[&str],

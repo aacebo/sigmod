@@ -22,7 +22,7 @@ impl OpenAIClient {
 }
 
 #[async_trait]
-impl ChatCompletionModel for OpenAIClient {
+impl ChatCompletionClient for OpenAIClient {
     async fn chat(
         &self,
         access_token: &str,

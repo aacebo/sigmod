@@ -180,7 +180,7 @@ impl ChatCompletionRequest {
 }
 
 #[async_trait]
-pub trait ChatCompletionModel: Send + Sync {
+pub trait ChatCompletionClient: Send + Sync {
     async fn chat(
         &self,
         access_token: &str,

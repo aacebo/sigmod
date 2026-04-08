@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, sync::Arc};
 
-use crate::model::{ChatCompletionModel, ClassificationModel, ModelId};
+use crate::model::{ChatCompletionClient, ClassificationClient, ModelId};
 
 #[derive(Default)]
 pub struct ModelRegistry {
@@ -20,7 +20,7 @@ impl ModelRegistry {
         self.items.len()
     }
 
-    pub fn register_chat(&mut self, id: ModelId, model: impl ChatCompletionModel + 'static) {
+    pub fn register_chat(&mut self, id: ModelId, model: impl ChatCompletionClient + 'static) {
         self.items.insert(
             id,
             ModelEntry {
@@ -30,7 +30,7 @@ impl ModelRegistry {
         );
     }
 
-    pub fn register_classifier(&mut self, id: ModelId, model: impl ClassificationModel + 'static) {
+    pub fn register_classifier(&mut self, id: ModelId, model: impl ClassificationClient + 'static) {
         self.items.insert(
             id,
             ModelEntry {
@@ -40,16 +40,16 @@ impl ModelRegistry {
         );
     }
 
-    pub fn chat(&self, id: &ModelId) -> Option<&dyn ChatCompletionModel> {
+    pub fn chat(&self, id: &ModelId) -> Option<&dyn ChatCompletionClient> {
         self.items.get(id)?.chat.as_deref()
     }
 
-    pub fn classifier(&self, id: &ModelId) -> Option<&dyn ClassificationModel> {
+    pub fn classifier(&self, id: &ModelId) -> Option<&dyn ClassificationClient> {
         self.items.get(id)?.classifier.as_deref()
     }
 }
 
 struct ModelEntry {
-    chat: Option<Arc<dyn ChatCompletionModel>>,
-    classifier: Option<Arc<dyn ClassificationModel>>,
+    chat: Option<Arc<dyn ChatCompletionClient>>,
+    classifier: Option<Arc<dyn ClassificationClient>>,
 }
