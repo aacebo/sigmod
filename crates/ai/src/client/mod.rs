@@ -3,17 +3,14 @@ pub mod classify;
 
 use std::sync::Arc;
 
-use async_trait::async_trait;
+pub trait ClientExtension {
+    fn request(&self, req: reqwest::Request) -> reqwest::Request {
+        req
+    }
 
-#[async_trait]
-pub trait RequestMiddleware {
-    type Err;
-
-    async fn execute<Next: FnOnce(reqwest::Request) -> Result<reqwest::Response, Self::Err>>(
-        &self,
-        req: reqwest::Request,
-        next: Next,
-    );
+    fn response(&self, res: reqwest::Response) -> reqwest::Response {
+        res
+    }
 }
 
 #[derive(Default, Clone)]
