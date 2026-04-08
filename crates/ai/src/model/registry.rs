@@ -1,10 +1,11 @@
 use std::{collections::BTreeMap, sync::Arc};
 
-use crate::model::{ChatCompletionClient, ClassificationClient, ModelId};
+use crate::client::{Client, chat, classify};
+use crate::model::ModelId;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ModelRegistry {
-    items: BTreeMap<ModelId, ModelEntry>,
+    items: BTreeMap<ModelId, Client>,
 }
 
 impl ModelRegistry {
@@ -20,7 +21,7 @@ impl ModelRegistry {
         self.items.len()
     }
 
-    pub fn register_chat(&mut self, id: ModelId, model: impl ChatCompletionClient + 'static) {
+    pub fn register_chat(&mut self, id: ModelId, model: impl chat::ChatCompletionClient + 'static) {
         self.items.insert(
             id,
             ModelEntry {
@@ -30,26 +31,19 @@ impl ModelRegistry {
         );
     }
 
-    pub fn register_classifier(&mut self, id: ModelId, model: impl ClassificationClient + 'static) {
-        self.items.insert(
-            id,
-            ModelEntry {
-                chat: None,
-                classifier: Some(Arc::new(model)),
-            },
-        );
+    pub fn register_classifier(
+        &mut self,
+        id: ModelId,
+        model: impl classify::ClassificationClient + 'static,
+    ) {
+        todo!()
     }
 
-    pub fn chat(&self, id: &ModelId) -> Option<&dyn ChatCompletionClient> {
+    pub fn chat(&self, id: &ModelId) -> Option<&dyn chat::ChatCompletionClient> {
         self.items.get(id)?.chat.as_deref()
     }
 
-    pub fn classifier(&self, id: &ModelId) -> Option<&dyn ClassificationClient> {
+    pub fn classifier(&self, id: &ModelId) -> Option<&dyn classify::ClassificationClient> {
         self.items.get(id)?.classifier.as_deref()
     }
-}
-
-struct ModelEntry {
-    chat: Option<Arc<dyn ChatCompletionClient>>,
-    classifier: Option<Arc<dyn ClassificationClient>>,
 }

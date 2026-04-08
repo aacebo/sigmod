@@ -1,4 +1,4 @@
-use ai::model::*;
+use ai::client::chat::{self, ChatCompletionClient};
 use ai::openai::OpenAIClient;
 
 #[tokio::test]
@@ -12,9 +12,9 @@ async fn chat_completion() {
     };
 
     let client = OpenAIClient::new();
-    let req = ChatCompletionRequest::new("gpt-4o-mini")
-        .with_messages(vec![ChatCompletionMessage::User {
-            content: Content::Text("Say hello in exactly 3 words.".to_string()),
+    let req = chat::ChatCompletionRequest::new("gpt-4o-mini")
+        .with_messages(vec![chat::ChatCompletionMessage::User {
+            content: chat::Content::Text("Say hello in exactly 3 words.".to_string()),
             name: None,
         }])
         .with_max_completion_tokens(20);
@@ -32,7 +32,7 @@ async fn chat_completion() {
 
     let choice = &res.choices[0];
 
-    if let ChatCompletionMessage::Assistant { content, .. } = &choice.message {
+    if let chat::ChatCompletionMessage::Assistant { content, .. } = &choice.message {
         assert!(content.is_some(), "expected assistant content");
         println!("Assistant: {}", content.as_ref().unwrap());
     } else {
