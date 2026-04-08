@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::model::ModelError;
+use crate::Error;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Label {
@@ -23,5 +23,5 @@ pub trait ClassificationClient: Send + Sync {
         inputs: &[&str],
         labels: &[Label],
         max_length: usize,
-    ) -> Result<Vec<Vec<LabelResult>>, ModelError>;
+    ) -> Result<Vec<Vec<LabelResult>>, Error>;
 }

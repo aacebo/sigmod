@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
+use crate::Error;
 use crate::client::chat;
-use crate::model::*;
 
 const BASE_URL: &str = "https://api.openai.com/v1/chat/completions";
 
@@ -28,7 +28,7 @@ impl chat::ChatCompletionClient for OpenAIClient {
         &self,
         access_token: &str,
         req: chat::ChatCompletionRequest,
-    ) -> Result<chat::ChatCompletionResponse, ModelError> {
+    ) -> Result<chat::ChatCompletionResponse, Error> {
         let res = self
             .client
             .post(BASE_URL)
@@ -37,16 +37,9 @@ impl chat::ChatCompletionClient for OpenAIClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_u16();
-            let body = res.text().await.unwrap_or_default();
-            return Err(ModelError::Api {
-                status,
-                message: body,
-            });
+        match res.error_for_status() {
+            Err(err) => Err(Error::Http(err)),
+            Ok(res) => Ok(res.json::<chat::ChatCompletionResponse>().await?),
         }
-
-        let response = res.json::<chat::ChatCompletionResponse>().await?;
-        Ok(response)
     }
 }

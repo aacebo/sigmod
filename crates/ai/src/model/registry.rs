@@ -1,6 +1,6 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::collections::BTreeMap;
 
-use crate::client::{Client, chat, classify};
+use crate::client::Client;
 use crate::model::ModelId;
 
 #[derive(Default, Clone)]
@@ -21,29 +21,15 @@ impl ModelRegistry {
         self.items.len()
     }
 
-    pub fn register_chat(&mut self, id: ModelId, model: impl chat::ChatCompletionClient + 'static) {
-        self.items.insert(
-            id,
-            ModelEntry {
-                chat: Some(Arc::new(model)),
-                classifier: None,
-            },
-        );
+    pub fn get(&self, id: &ModelId) -> Option<&Client> {
+        self.items.get(id)
     }
 
-    pub fn register_classifier(
-        &mut self,
-        id: ModelId,
-        model: impl classify::ClassificationClient + 'static,
-    ) {
-        todo!()
+    pub fn get_mut(&mut self, id: &ModelId) -> Option<&mut Client> {
+        self.items.get_mut(id)
     }
 
-    pub fn chat(&self, id: &ModelId) -> Option<&dyn chat::ChatCompletionClient> {
-        self.items.get(id)?.chat.as_deref()
-    }
-
-    pub fn classifier(&self, id: &ModelId) -> Option<&dyn classify::ClassificationClient> {
-        self.items.get(id)?.classifier.as_deref()
+    pub fn register(&mut self, id: ModelId, client: Client) {
+        self.items.insert(id, client);
     }
 }

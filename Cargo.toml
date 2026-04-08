@@ -1,8 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*", "services/*"]
-default-members = [
-    "services/*",
+default-members = ["services/*",
     "crates/amqp",
     "crates/error",
     "crates/eval",

@@ -5,6 +5,7 @@
   "rust-analyzer.cargo.targetDir": true,
   "rust-analyzer.restartServerOnConfigChange": true,
   "rust-analyzer.check.workspace": false,
+  "rust-analyzer.check.allTargets": false,
   "terminal.integrated.suggest.enabled": false,
   "terminal.integrated.fontFamily": "Monaco, Menlo, monospace",
   "terminal.integrated.cursorStyle": "block",

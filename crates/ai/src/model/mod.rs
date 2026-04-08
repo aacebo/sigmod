@@ -1,12 +1,12 @@
-mod error;
 mod provider;
 mod registry;
 
-pub use error::*;
 pub use provider::*;
 pub use registry::*;
 
 use std::str::FromStr;
+
+use crate::error::ParseError;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct ModelId {
