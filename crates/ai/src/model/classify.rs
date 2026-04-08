@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::model::{Model, ModelError};
+use crate::model::ModelError;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Label {
@@ -17,7 +17,7 @@ pub struct LabelResult {
 }
 
 #[async_trait]
-pub trait ClassificationModel: Model {
+pub trait ClassificationModel: Send + Sync {
     async fn predict(
         &self,
         inputs: &[&str],

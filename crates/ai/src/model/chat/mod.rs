@@ -9,7 +9,7 @@ pub use tool::*;
 use async_trait::async_trait;
 use serde_with::skip_serializing_none;
 
-use crate::model::{Model, ModelError};
+use crate::model::ModelError;
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -180,7 +180,7 @@ impl ChatCompletionRequest {
 }
 
 #[async_trait]
-pub trait ChatCompletionModel: Model {
+pub trait ChatCompletionModel: Send + Sync {
     async fn chat(
         &self,
         access_token: &str,

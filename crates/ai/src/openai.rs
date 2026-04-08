@@ -21,15 +21,6 @@ impl OpenAIClient {
     }
 }
 
-impl Model for OpenAIClient {
-    fn id(&self) -> ModelId {
-        ModelId {
-            provider: ProviderId::OpenAI,
-            id: "chat".to_string(),
-        }
-    }
-}
-
 #[async_trait]
 impl ChatCompletionModel for OpenAIClient {
     async fn chat(

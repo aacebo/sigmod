@@ -12,10 +12,6 @@ pub use registry::*;
 
 use std::str::FromStr;
 
-pub trait Model: Send + Sync {
-    fn id(&self) -> ModelId;
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct ModelId {
     pub provider: ProviderId,

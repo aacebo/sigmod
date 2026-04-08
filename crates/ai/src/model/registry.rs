@@ -20,9 +20,9 @@ impl ModelRegistry {
         self.items.len()
     }
 
-    pub fn register_chat(&mut self, model: impl ChatCompletionModel + 'static) {
+    pub fn register_chat(&mut self, id: ModelId, model: impl ChatCompletionModel + 'static) {
         self.items.insert(
-            model.id(),
+            id,
             ModelEntry {
                 chat: Some(Arc::new(model)),
                 classifier: None,
@@ -30,9 +30,9 @@ impl ModelRegistry {
         );
     }
 
-    pub fn register_classifier(&mut self, model: impl ClassificationModel + 'static) {
+    pub fn register_classifier(&mut self, id: ModelId, model: impl ClassificationModel + 'static) {
         self.items.insert(
-            model.id(),
+            id,
             ModelEntry {
                 chat: None,
                 classifier: Some(Arc::new(model)),

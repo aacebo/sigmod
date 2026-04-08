@@ -13,9 +13,9 @@ repository.workspace = true
 doctest = false
 
 [dependencies]
-tch = { version = "0.17" }
-console = { version = "0.16", features = ["std"] }
-rust-bert = { version = "0.23" }
+# tch = { version = "0.17" }
+# console = { version = "0.16", features = ["std"] }
+# rust-bert = { version = "0.23" }
 error.path = "../error"
 ulid.workspace = true
 serde.workspace = true
