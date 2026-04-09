@@ -1,6 +1,7 @@
 pub mod classifier;
 mod decision;
 pub mod judge;
+pub mod math;
 mod meta;
 
 pub use ai::model::{ModelId, ProviderId};
@@ -52,7 +53,7 @@ pub struct EvalResult {
     pub scorers: Vec<ScorerOutput>,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Evaluate {
     type Output;
 

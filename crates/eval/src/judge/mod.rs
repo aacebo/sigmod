@@ -9,7 +9,7 @@ use std::fmt::Write;
 
 use async_trait::async_trait;
 
-use crate::{Decision, Evaluate, Meta, ModelId};
+use crate::{Decision, Evaluate, Meta, ModelId, math};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Scorer {
@@ -104,16 +104,6 @@ struct JudgeCriterionResponse {
     reasoning: String,
 }
 
-fn weighted_avg(items: &[(f32, f32)]) -> f32 {
-    let total_weight: f32 = items.iter().map(|(_, w)| w).sum();
-
-    if total_weight == 0.0 {
-        return 0.0;
-    }
-
-    items.iter().map(|(score, w)| score * w).sum::<f32>() / total_weight
-}
-
 #[async_trait]
 impl Evaluate for Scorer {
     type Output = Output;
@@ -204,7 +194,7 @@ impl Evaluate for Scorer {
             criterion_scores.push((score, criterion.weight));
         }
 
-        let score = weighted_avg(&criterion_scores);
+        let score = math::weighted_avg(&criterion_scores);
         let decision = if score >= self.threshold {
             Decision::Accept
         } else {

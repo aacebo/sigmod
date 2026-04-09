@@ -9,9 +9,24 @@ use std::str::FromStr;
 use crate::error::ParseError;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct ModelId {
     pub provider: ProviderId,
     pub id: String,
+}
+
+impl TryFrom<String> for ModelId {
+    type Error = ParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse()
+    }
+}
+
+impl From<ModelId> for String {
+    fn from(value: ModelId) -> Self {
+        value.to_string()
+    }
 }
 
 impl FromStr for ModelId {

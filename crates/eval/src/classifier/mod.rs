@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 
-use crate::{Decision, Evaluate, Meta, ModelId};
+use crate::{Decision, Evaluate, Meta, ModelId, math};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Scorer {
@@ -52,16 +52,6 @@ impl Scorer {
     fn default_weight() -> f32 {
         1.0
     }
-}
-
-fn weighted_avg(items: &[(f32, f32)]) -> f32 {
-    let total_weight: f32 = items.iter().map(|(_, w)| w).sum();
-
-    if total_weight == 0.0 {
-        return 0.0;
-    }
-
-    items.iter().map(|(score, w)| score * w).sum::<f32>() / total_weight
 }
 
 #[async_trait]
@@ -140,7 +130,7 @@ impl Evaluate for Scorer {
                 .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
             scored_labels.truncate(top_k);
 
-            let cat_score = weighted_avg(&scored_labels);
+            let cat_score = math::weighted_avg(&scored_labels);
             let cat_decision = if cat_score >= category.threshold {
                 Decision::Accept
             } else {

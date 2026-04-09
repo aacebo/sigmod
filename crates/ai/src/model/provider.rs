@@ -1,5 +1,6 @@
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[serde(from = "String", into = "String")]
 pub enum ProviderId {
     Local,
     OpenAI,
@@ -18,6 +19,12 @@ impl ProviderId {
             Self::HuggingFace => "huggingface",
             Self::Other(other) => other.as_str(),
         }
+    }
+}
+
+impl From<ProviderId> for String {
+    fn from(value: ProviderId) -> Self {
+        value.to_string()
     }
 }
 
