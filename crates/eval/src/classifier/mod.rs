@@ -10,26 +10,26 @@ use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 
-use crate::{Decision, Evaluate, Meta, ModelId, math};
+use crate::{Context, Decision, Evaluate, Meta, ModelId, math};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
-pub struct Scorer {
+pub struct Input {
     /// the model to use.
     pub model: ModelId,
 
     /// Number of top labels to consider per category (default)
-    #[serde(default = "Scorer::default_top_k")]
+    #[serde(default = "Input::default_top_k")]
     #[validate(minimum = 1)]
     pub top_k: usize,
 
     /// Weight applied to score when calculating importance.
-    #[serde(default = "Scorer::default_weight")]
+    #[serde(default = "Input::default_weight")]
     #[validate(minimum = 0.0)]
     #[validate(maximum = 1.0)]
     pub weight: f32,
 
     /// Baseline threshold for overall score acceptance
-    #[serde(default = "Scorer::default_threshold")]
+    #[serde(default = "Input::default_threshold")]
     #[validate(minimum = 0.0)]
     #[validate(maximum = 1.0)]
     pub threshold: f32,
@@ -40,7 +40,7 @@ pub struct Scorer {
     pub categories: BTreeMap<String, Category>,
 }
 
-impl Scorer {
+impl Input {
     fn default_threshold() -> f32 {
         0.75
     }
@@ -55,15 +55,17 @@ impl Scorer {
 }
 
 #[async_trait]
-impl Evaluate for Scorer {
+impl Evaluate for Input {
     type Output = Output;
 
-    async fn evaluate(
-        &self,
-        text: &str,
-        client: &ai::client::Client,
-    ) -> Result<Self::Output, error::Error> {
-        let classifier = client
+    async fn evaluate(&self, ctx: &mut Context) -> Result<Self::Output, error::Error> {
+        let classifier = ctx
+            .client(&self.model)
+            .ok_or(
+                error::Error::new()
+                    .with_message("client not found for model provided")
+                    .with_field("model", &self.model),
+            )?
             .as_classifier()
             .ok_or_else(|| error::Error::new().with_message("no classifier client configured"))?;
 
@@ -85,7 +87,7 @@ impl Evaluate for Scorer {
 
         // Build a score lookup: (category, label) -> raw score
         let mut score_map: BTreeMap<(&str, &str), f64> = BTreeMap::new();
-        let results = classifier.predict(&[text], &ai_labels, 128).await?;
+        let results = classifier.predict(&[ctx.input()], &ai_labels, 128).await?;
         let sentence_results = results.into_iter().next().unwrap_or_default();
 
         for result in &sentence_results {
@@ -157,12 +159,7 @@ impl Evaluate for Scorer {
         };
 
         Ok(Output {
-            meta: Meta {
-                request_id: None,
-                elapsed_time: None,
-                usage: None,
-                other: BTreeMap::new(),
-            },
+            meta: Meta::new(),
             score,
             decision,
             categories: category_results,

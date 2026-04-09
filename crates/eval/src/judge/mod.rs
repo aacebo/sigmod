@@ -4,15 +4,14 @@ mod output;
 pub use criterion::*;
 pub use output::*;
 
-use std::collections::BTreeMap;
 use std::fmt::Write;
 
 use async_trait::async_trait;
 
-use crate::{Decision, Evaluate, Meta, ModelId, math};
+use crate::{Context, Decision, Evaluate, Meta, ModelId, math};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
-pub struct Scorer {
+pub struct Input {
     /// the model to use.
     pub model: ModelId,
 
@@ -29,13 +28,13 @@ pub struct Scorer {
     pub top_k: Option<usize>,
 
     /// Weight applied to score when calculating importance.
-    #[serde(default = "Scorer::default_weight")]
+    #[serde(default = "Input::default_weight")]
     #[validate(minimum = 0.0)]
     #[validate(maximum = 1.0)]
     pub weight: f32,
 
     /// Baseline threshold for overall score acceptance
-    #[serde(default = "Scorer::default_threshold")]
+    #[serde(default = "Input::default_threshold")]
     #[validate(minimum = 0.0)]
     #[validate(maximum = 1.0)]
     pub threshold: f32,
@@ -50,7 +49,7 @@ pub struct Scorer {
     pub criteria: Vec<Criterion>,
 }
 
-impl Scorer {
+impl Input {
     fn default_threshold() -> f32 {
         0.7
     }
@@ -71,15 +70,17 @@ impl Scorer {
 }
 
 #[async_trait]
-impl Evaluate for Scorer {
+impl Evaluate for Input {
     type Output = Output;
 
-    async fn evaluate(
-        &self,
-        text: &str,
-        client: &ai::client::Client,
-    ) -> Result<Self::Output, error::Error> {
-        let chat = client
+    async fn evaluate(&self, ctx: &mut Context) -> Result<Self::Output, error::Error> {
+        let chat = ctx
+            .client(&self.model)
+            .ok_or(
+                error::Error::new()
+                    .with_message("client not found for model provided")
+                    .with_field("model", &self.model),
+            )?
             .as_chat()
             .ok_or_else(|| error::Error::new().with_message("no chat client configured"))?;
 
@@ -91,7 +92,7 @@ impl Evaluate for Scorer {
                     name: None,
                 },
                 ai::client::chat::ChatCompletionMessage::User {
-                    content: ai::client::chat::Content::Text(text.to_string()),
+                    content: ai::client::chat::Content::Text(ctx.input().to_string()),
                     name: None,
                 },
             ])
@@ -160,7 +161,7 @@ impl Evaluate for Scorer {
 
             criterion_results.push(CriterionResult {
                 score: judge_criterion.score,
-                reasoning: judge_criterion.reasoning,
+                reasoning: judge_criterion.reasoning.clone(),
                 decision: if judge_criterion.score >= criterion.threshold {
                     Decision::Accept
                 } else {
@@ -169,6 +170,12 @@ impl Evaluate for Scorer {
             });
 
             criterion_scores.push((judge_criterion.score, criterion.weight));
+        }
+
+        criterion_scores.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+
+        if let Some(k) = self.top_k {
+            criterion_scores.truncate(k);
         }
 
         let score = math::weighted_avg(&criterion_scores);
@@ -185,12 +192,7 @@ impl Evaluate for Scorer {
         });
 
         Ok(Output {
-            meta: Meta {
-                request_id: None,
-                elapsed_time: None,
-                usage,
-                other: BTreeMap::new(),
-            },
+            meta: Meta::new().with(Meta::USAGE, usage)?,
             score,
             decision,
             reasoning: judge_response.reasoning,

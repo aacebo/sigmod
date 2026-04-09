@@ -3,16 +3,30 @@ mod decision;
 pub mod judge;
 pub mod math;
 mod meta;
+mod run;
 
 pub use ai::model::{ModelId, ProviderId};
 pub use decision::*;
 pub use meta::*;
+pub use run::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub enum Scorer {
-    Classifier(classifier::Scorer),
-    Judge(judge::Scorer),
+pub enum ScorerInput {
+    Classifier(classifier::Input),
+    Judge(judge::Input),
+}
+
+#[async_trait::async_trait]
+impl Evaluate for ScorerInput {
+    type Output = ScorerOutput;
+
+    async fn evaluate(&self, ctx: &mut Context) -> Result<Self::Output, error::Error> {
+        Ok(match self {
+            Self::Classifier(v) => v.evaluate(ctx).await?.into(),
+            Self::Judge(v) => v.evaluate(ctx).await?.into(),
+        })
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -20,6 +34,25 @@ pub enum Scorer {
 pub enum ScorerOutput {
     Classifier(classifier::Output),
     Judge(judge::Output),
+    Error(error::Error),
+}
+
+impl From<classifier::Output> for ScorerOutput {
+    fn from(value: classifier::Output) -> Self {
+        Self::Classifier(value)
+    }
+}
+
+impl From<judge::Output> for ScorerOutput {
+    fn from(value: judge::Output) -> Self {
+        Self::Judge(value)
+    }
+}
+
+impl From<error::Error> for ScorerOutput {
+    fn from(value: error::Error) -> Self {
+        Self::Error(value)
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
@@ -34,7 +67,7 @@ pub struct EvalRequest {
 
     /// the scorers to use.
     #[validate(min_items = 1)]
-    pub scorers: Vec<Scorer>,
+    pub scorers: Vec<ScorerInput>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -57,11 +90,7 @@ pub struct EvalResult {
 pub trait Evaluate {
     type Output;
 
-    async fn evaluate(
-        &self,
-        text: &str,
-        client: &ai::client::Client,
-    ) -> Result<Self::Output, error::Error>;
+    async fn evaluate(&self, ctx: &mut Context) -> Result<Self::Output, error::Error>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
