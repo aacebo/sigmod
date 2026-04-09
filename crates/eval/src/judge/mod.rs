@@ -8,7 +8,7 @@ use std::fmt::Write;
 
 use async_trait::async_trait;
 
-use crate::{Context, Decision, Evaluate, Meta, ModelId, math};
+use crate::{ConsensusStrategy, Context, Decision, Evaluate, Meta, ModelId};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Input {
@@ -22,10 +22,9 @@ pub struct Input {
     #[validate(min_length = 2)]
     pub name: String,
 
-    /// Number of top labels to consider for this category
+    /// Consensus strategy for aggregating criterion scores.
     #[serde(default)]
-    #[validate(minimum = 1)]
-    pub top_k: Option<usize>,
+    pub consensus: ConsensusStrategy,
 
     /// Weight applied to score when calculating importance.
     #[serde(default = "Input::default_weight")]
@@ -153,38 +152,33 @@ impl Evaluate for Input {
         // Map criteria results
         let mut criterion_results: Vec<CriterionResult> = Vec::new();
         let mut criterion_scores: Vec<(f32, f32)> = Vec::new();
+        let mut criterion_decisions: Vec<Decision> = Vec::new();
 
         for (i, criterion) in self.criteria.iter().enumerate() {
             let judge_criterion = judge_response.criteria.get(i).ok_or_else(|| {
                 error::Error::new().with_message("judge did not score all criteria")
             })?;
 
+            let decision = if judge_criterion.score >= criterion.threshold {
+                Decision::Accept
+            } else {
+                Decision::Reject
+            };
+
             criterion_results.push(CriterionResult {
                 score: judge_criterion.score,
                 reasoning: judge_criterion.reasoning.clone(),
-                decision: if judge_criterion.score >= criterion.threshold {
-                    Decision::Accept
-                } else {
-                    Decision::Reject
-                },
+                decision,
             });
 
             criterion_scores.push((judge_criterion.score, criterion.weight));
+            criterion_decisions.push(decision);
         }
 
-        criterion_scores.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-
-        if let Some(k) = self.top_k {
-            criterion_scores.truncate(k);
-        }
-
-        let score = math::weighted_avg(&criterion_scores);
+        let (score, decision) =
+            self.consensus
+                .apply(&criterion_scores, &criterion_decisions, self.threshold);
         let elapse = chrono::Utc::now() - started_at;
-        let decision = if score >= self.threshold {
-            Decision::Accept
-        } else {
-            Decision::Reject
-        };
 
         let usage = res.usage.map(|u| crate::Usage {
             tokens: u.total_tokens,

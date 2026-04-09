@@ -1,4 +1,5 @@
 pub mod classifier;
+mod consensus;
 mod decision;
 pub mod judge;
 pub mod math;
@@ -7,6 +8,7 @@ mod run;
 mod score;
 
 pub use ai::model::{ModelId, ProviderId};
+pub use consensus::*;
 pub use decision::*;
 pub use meta::*;
 pub use run::*;

@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use ai::local::classify::LocalClassifierBuilder;
 use ai::openai::OpenAIClient;
-use eval::{Decision, EvalRequest, Runner, ScorerInput, ScorerOutput};
+use eval::{ConsensusStrategy, Decision, EvalRequest, Runner, ScorerInput, ScorerOutput};
 
 fn api_key() -> String {
     std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set")
@@ -22,7 +22,7 @@ fn judge_input(threshold: f32, criteria: Vec<(&str, f32)>) -> ScorerInput {
         model: judge_model(),
         access_token: api_key(),
         name: "quality-judge".to_string(),
-        top_k: None,
+        consensus: Default::default(),
         weight: 1.0,
         threshold,
         prompt: None,
@@ -41,7 +41,7 @@ fn judge_input(threshold: f32, criteria: Vec<(&str, f32)>) -> ScorerInput {
 #[ignore]
 async fn judge_accepts_high_quality_text() {
     let req = EvalRequest {
-        request_id: None,
+
         input: "The mitochondria is the powerhouse of the cell. It generates ATP through oxidative phosphorylation.".to_string(),
         scorers: vec![judge_input(0.5, vec![
             ("Is the text factually accurate?", 0.5),
@@ -77,7 +77,6 @@ async fn judge_accepts_high_quality_text() {
 #[ignore]
 async fn judge_rejects_low_quality_text() {
     let req = EvalRequest {
-        request_id: None,
         input: "asdf jkl; qwerty uiop zxcv bnm".to_string(),
         scorers: vec![judge_input(
             0.7,
@@ -113,7 +112,6 @@ async fn judge_rejects_low_quality_text() {
 #[ignore]
 async fn multiple_judges_all_accept() {
     let req = EvalRequest {
-        request_id: None,
         input: "Rust is a systems programming language focused on safety, speed, and concurrency."
             .to_string(),
         scorers: vec![
@@ -148,7 +146,6 @@ async fn multiple_judges_all_accept() {
 #[ignore]
 async fn mixed_accept_reject_means_reject() {
     let req = EvalRequest {
-        request_id: None,
         input: "The sky is green and made of cheese.".to_string(),
         scorers: vec![
             judge_input(
@@ -181,13 +178,12 @@ async fn mixed_accept_reject_means_reject() {
 #[ignore]
 async fn judge_top_k_uses_best_criteria() {
     let req = EvalRequest {
-        request_id: None,
         input: "Water boils at 100 degrees Celsius at sea level.".to_string(),
         scorers: vec![ScorerInput::Judge(eval::judge::Input {
             model: judge_model(),
             access_token: api_key(),
             name: "selective-judge".to_string(),
-            top_k: Some(1),
+            consensus: ConsensusStrategy::TopK { k: 1 },
             weight: 1.0,
             threshold: 0.5,
             prompt: None,
@@ -231,7 +227,6 @@ async fn judge_top_k_uses_best_criteria() {
 #[ignore]
 async fn eval_result_has_valid_id() {
     let req = EvalRequest {
-        request_id: None,
         input: "Simple test input.".to_string(),
         scorers: vec![judge_input(0.5, vec![("Is this text readable?", 0.5)])],
     };
@@ -250,13 +245,12 @@ async fn missing_model_produces_error() {
     let runner = Runner::new(); // no clients registered
 
     let req = EvalRequest {
-        request_id: None,
         input: "Some text".to_string(),
         scorers: vec![ScorerInput::Judge(eval::judge::Input {
             model: judge_model(),
             access_token: "unused".to_string(),
             name: "judge".to_string(),
-            top_k: None,
+            consensus: Default::default(),
             weight: 1.0,
             threshold: 0.5,
             prompt: None,
@@ -310,7 +304,7 @@ fn make_category(
     }
 
     eval::classifier::Category {
-        top_k,
+        consensus: ConsensusStrategy::TopK { k: top_k },
         weight: 1.0,
         threshold,
         labels: label_map,
@@ -332,11 +326,10 @@ async fn classifier_accepts_matching_text() {
     );
 
     let req = EvalRequest {
-        request_id: None,
         input: "I love cooking Italian pasta with fresh tomatoes and basil".to_string(),
         scorers: vec![ScorerInput::Classifier(eval::classifier::Input {
             model: classifier_model(),
-            top_k: 2,
+            consensus: ConsensusStrategy::TopK { k: 2 },
             weight: 1.0,
             threshold: 0.3,
             categories,
@@ -388,12 +381,11 @@ async fn classifier_rejects_non_matching_text() {
     );
 
     let req = EvalRequest {
-        request_id: None,
         input: "The stock market crashed today after the Federal Reserve raised interest rates"
             .to_string(),
         scorers: vec![ScorerInput::Classifier(eval::classifier::Input {
             model: classifier_model(),
-            top_k: 1,
+            consensus: ConsensusStrategy::TopK { k: 1 },
             weight: 1.0,
             threshold: 0.8,
             categories,
@@ -437,11 +429,10 @@ async fn classifier_top_k_selects_best_labels() {
     );
 
     let req = EvalRequest {
-        request_id: None,
         input: "I love cooking Italian pasta".to_string(),
         scorers: vec![ScorerInput::Classifier(eval::classifier::Input {
             model: classifier_model(),
-            top_k: 1,
+            consensus: ConsensusStrategy::TopK { k: 1 },
             weight: 1.0,
             threshold: 0.0,
             categories,
@@ -486,12 +477,11 @@ async fn classifier_multiple_categories() {
     );
 
     let req = EvalRequest {
-        request_id: None,
         input: "Italian cuisine uses fresh ingredients like tomatoes, basil, and olive oil"
             .to_string(),
         scorers: vec![ScorerInput::Classifier(eval::classifier::Input {
             model: classifier_model(),
-            top_k: 2,
+            consensus: ConsensusStrategy::TopK { k: 2 },
             weight: 1.0,
             threshold: 0.2,
             categories,
@@ -542,12 +532,11 @@ async fn mixed_classifier_and_judge() {
     );
 
     let req = EvalRequest {
-        request_id: None,
         input: "Water boils at 100 degrees Celsius at standard atmospheric pressure".to_string(),
         scorers: vec![
             ScorerInput::Classifier(eval::classifier::Input {
                 model: classifier_model(),
-                top_k: 1,
+                consensus: ConsensusStrategy::TopK { k: 1 },
                 weight: 1.0,
                 threshold: 0.3,
                 categories,

@@ -10,17 +10,16 @@ use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 
-use crate::{Context, Decision, Evaluate, Meta, ModelId, math};
+use crate::{ConsensusStrategy, Context, Decision, Evaluate, Meta, ModelId};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Input {
     /// the model to use.
     pub model: ModelId,
 
-    /// Number of top labels to consider per category (default)
-    #[serde(default = "Input::default_top_k")]
-    #[validate(minimum = 1)]
-    pub top_k: usize,
+    /// Consensus strategy for aggregating category scores.
+    #[serde(default)]
+    pub consensus: ConsensusStrategy,
 
     /// Weight applied to score when calculating importance.
     #[serde(default = "Input::default_weight")]
@@ -43,10 +42,6 @@ pub struct Input {
 impl Input {
     fn default_threshold() -> f32 {
         0.75
-    }
-
-    fn default_top_k() -> usize {
-        2
     }
 
     fn default_weight() -> f32 {
@@ -100,11 +95,12 @@ impl Evaluate for Input {
         // Compute per-category results
         let mut category_results: BTreeMap<String, CategoryResult> = BTreeMap::new();
         let mut category_scores: Vec<(f32, f32)> = Vec::new();
+        let mut category_decisions: Vec<Decision> = Vec::new();
 
         for (cat_name, category) in &self.categories {
-            let top_k = category.top_k;
             let mut label_results: BTreeMap<String, LabelResult> = BTreeMap::new();
             let mut scored_labels: Vec<(f32, f32)> = Vec::new();
+            let mut label_decisions: Vec<Decision> = Vec::new();
 
             for (label_name, label) in &category.labels {
                 let raw_score = *score_map
@@ -126,19 +122,13 @@ impl Evaluate for Input {
                 );
 
                 scored_labels.push((raw_score, label.weight));
+                label_decisions.push(decision);
             }
 
-            // Sort by score descending, take top_k
-            scored_labels
-                .sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-            scored_labels.truncate(top_k);
-
-            let cat_score = math::weighted_avg(&scored_labels);
-            let cat_decision = if cat_score >= category.threshold {
-                Decision::Accept
-            } else {
-                Decision::Reject
-            };
+            let (cat_score, cat_decision) =
+                category
+                    .consensus
+                    .apply(&scored_labels, &label_decisions, category.threshold);
 
             category_results.insert(
                 cat_name.clone(),
@@ -150,15 +140,13 @@ impl Evaluate for Input {
             );
 
             category_scores.push((cat_score, category.weight));
+            category_decisions.push(cat_decision);
         }
 
-        let score = math::weighted_avg(&category_scores);
+        let (score, decision) =
+            self.consensus
+                .apply(&category_scores, &category_decisions, self.threshold);
         let elapse = chrono::Utc::now() - started_at;
-        let decision = if score >= self.threshold {
-            Decision::Accept
-        } else {
-            Decision::Reject
-        };
 
         Ok(Output {
             meta: Meta::new().with(Meta::ELAPSED_MS, format!("{}ms", elapse.num_milliseconds()))?,
