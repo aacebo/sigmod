@@ -14,10 +14,6 @@ pub use score::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct EvalRequest {
-    /// request identifier.
-    #[serde(default)]
-    pub request_id: Option<String>,
-
     /// the input text being evaluated.
     #[validate(min_length = 3)]
     pub input: String,
