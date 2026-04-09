@@ -20,3 +20,6 @@ ulid.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_valid.workspace = true
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
