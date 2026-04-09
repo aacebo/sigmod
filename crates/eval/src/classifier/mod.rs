@@ -78,15 +78,15 @@ impl Evaluate for Scorer {
                     name: label_name.clone(),
                     description: label.description.clone(),
                 });
+
                 label_index.push((cat_name.as_str(), label_name.as_str()));
             }
         }
 
-        let results = classifier.predict(&[text], &ai_labels, 128).await?;
-        let sentence_results = results.into_iter().next().unwrap_or_default();
-
         // Build a score lookup: (category, label) -> raw score
         let mut score_map: BTreeMap<(&str, &str), f64> = BTreeMap::new();
+        let results = classifier.predict(&[text], &ai_labels, 128).await?;
+        let sentence_results = results.into_iter().next().unwrap_or_default();
 
         for result in &sentence_results {
             if let Some(&(cat_name, label_name)) = label_index.get(result.id as usize) {

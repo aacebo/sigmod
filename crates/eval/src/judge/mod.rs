@@ -16,6 +16,9 @@ pub struct Scorer {
     /// the model to use.
     pub model: ModelId,
 
+    /// access token for the LLM provider.
+    pub access_token: String,
+
     /// the judges name.
     #[validate(min_length = 2)]
     pub name: String,
@@ -39,19 +42,12 @@ pub struct Scorer {
 
     /// the prompt/instructions for the judge.
     #[validate(min_length = 3)]
-    pub prompt: String,
+    pub prompt: Option<String>,
 
     /// criteria the judge evaluates against.
     #[serde(default)]
     #[validate(min_items = 1)]
     pub criteria: Vec<Criterion>,
-
-    /// options set to the LLM when applicable.
-    #[serde(default)]
-    pub options: Option<BTreeMap<String, serde_json::Value>>,
-
-    /// access token for the LLM provider.
-    pub access_token: String,
 }
 
 impl Scorer {
@@ -63,45 +59,15 @@ impl Scorer {
         1.0
     }
 
-    fn build_system_prompt(&self) -> String {
-        let mut prompt = self.prompt.clone();
+    fn system_prompt(&self) -> String {
+        let mut prompt = self.prompt.clone().unwrap_or(String::from("You are a judge tasked with scoring the users message text against the following criterion:"));
 
-        if !self.criteria.is_empty() {
-            prompt.push_str("\n\nEvaluate the following criteria:\n");
-
-            for (i, criterion) in self.criteria.iter().enumerate() {
-                if let Some(desc) = &criterion.description {
-                    let _ = write!(prompt, "{}. {}\n", i + 1, desc);
-                } else {
-                    let _ = write!(prompt, "{}. Criterion {}\n", i + 1, i + 1);
-                }
-            }
+        for (i, criterion) in self.criteria.iter().enumerate() {
+            let _ = write!(prompt, "\n#{} => {}", i + 1, criterion.description);
         }
-
-        prompt.push_str(
-            "\nRespond with JSON in this exact format:\n\
-             {\n\
-             \t\"reasoning\": \"overall reasoning\",\n\
-             \t\"criteria\": [\n\
-             \t\t{ \"score\": 0.0-1.0, \"reasoning\": \"reasoning for this criterion\" }\n\
-             \t]\n\
-             }\n",
-        );
 
         prompt
     }
-}
-
-#[derive(serde::Deserialize)]
-struct JudgeResponse {
-    reasoning: Option<String>,
-    criteria: Vec<JudgeCriterionResponse>,
-}
-
-#[derive(serde::Deserialize)]
-struct JudgeCriterionResponse {
-    score: f32,
-    reasoning: String,
 }
 
 #[async_trait]
@@ -117,9 +83,8 @@ impl Evaluate for Scorer {
             .as_chat()
             .ok_or_else(|| error::Error::new().with_message("no chat client configured"))?;
 
-        let system_prompt = self.build_system_prompt();
-
-        let mut req = ai::client::chat::ChatCompletionRequest::new(self.model.id.clone())
+        let system_prompt = self.system_prompt();
+        let req = ai::client::chat::ChatCompletionRequest::new(self.model.id.clone())
             .with_messages(vec![
                 ai::client::chat::ChatCompletionMessage::System {
                     content: ai::client::chat::Content::Text(system_prompt),
@@ -130,26 +95,42 @@ impl Evaluate for Scorer {
                     name: None,
                 },
             ])
-            .with_response_format(ai::client::chat::ResponseFormat::JsonObject);
-
-        // Apply options if provided
-        if let Some(options) = &self.options {
-            if let Some(temp) = options.get("temperature").and_then(|v| v.as_f64()) {
-                req = req.with_temperature(temp as f32);
-            }
-            if let Some(top_p) = options.get("top_p").and_then(|v| v.as_f64()) {
-                req = req.with_top_p(top_p as f32);
-            }
-            if let Some(max_tokens) = options
-                .get("max_completion_tokens")
-                .and_then(|v| v.as_u64())
-            {
-                req = req.with_max_completion_tokens(max_tokens as u32);
-            }
-        }
+            .with_response_format(ai::client::chat::ResponseFormat::JsonSchema {
+                json_schema: ai::client::chat::JsonSchema {
+                    name: "JudgeResponse".to_string(),
+                    schema: serde_json::json!({
+                        "type": "object",
+                        "properties": {
+                            "reasoning": { "type": "string" },
+                            "criteria": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "score": {
+                                            "type": "number",
+                                            "min": "0",
+                                            "max": "1",
+                                            "description": "criterion score"
+                                        },
+                                        "reasoning": {
+                                            "type": "string",
+                                            "description": "reasoning for this criterion"
+                                        }
+                                    },
+                                    "required": ["score", "reasoning"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        },
+                        "required": ["criteria"],
+                        "additionalProperties": false
+                    }),
+                    strict: Some(true),
+                },
+            });
 
         let res = chat.chat(&self.access_token, req).await?;
-
         let content = res
             .choices
             .first()
@@ -172,26 +153,22 @@ impl Evaluate for Scorer {
         let mut criterion_scores: Vec<(f32, f32)> = Vec::new();
 
         for (i, criterion) in self.criteria.iter().enumerate() {
-            let judge_criterion = judge_response.criteria.get(i);
-
-            let score = judge_criterion.map(|c| c.score).unwrap_or(0.0);
-            let reasoning = judge_criterion
-                .map(|c| c.reasoning.clone())
-                .unwrap_or_default();
-
-            let decision = if score >= criterion.threshold {
-                Decision::Accept
-            } else {
-                Decision::Reject
-            };
+            let judge_criterion = judge_response
+                .criteria
+                .get(i)
+                .expect("judge did not score all criterion");
 
             criterion_results.push(CriterionResult {
-                score,
-                decision,
-                reasoning,
+                score: judge_criterion.score,
+                reasoning: judge_criterion.reasoning,
+                decision: if judge_criterion.score >= criterion.threshold {
+                    Decision::Accept
+                } else {
+                    Decision::Reject
+                },
             });
 
-            criterion_scores.push((score, criterion.weight));
+            criterion_scores.push((judge_criterion.score, criterion.weight));
         }
 
         let score = math::weighted_avg(&criterion_scores);
@@ -220,4 +197,16 @@ impl Evaluate for Scorer {
             criteria: criterion_results,
         })
     }
+}
+
+#[derive(serde::Deserialize)]
+struct JudgeResponse {
+    reasoning: Option<String>,
+    criteria: Vec<JudgeCriterionResponse>,
+}
+
+#[derive(serde::Deserialize)]
+struct JudgeCriterionResponse {
+    score: f32,
+    reasoning: String,
 }
