@@ -17,11 +17,9 @@ tch = "0.17"
 console = "0.16"
 rust-bert = "0.23"
 reqwest = { version = "0.13", features = ["json", "query"] }
+tokio = { version = "1", features = ["rt", "macros"] }
 
 serde.workspace = true
 serde_json.workspace = true
 serde_with.workspace = true
 async-trait.workspace = true
-
-[dev-dependencies]
-tokio = { version = "1", features = ["rt", "macros"] }
