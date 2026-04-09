@@ -53,7 +53,7 @@ pub struct EvalResult {
     pub scorers: Vec<ScorerOutput>,
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 pub trait Evaluate {
     type Output;
 

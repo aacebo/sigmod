@@ -1,18 +1,7 @@
 pub mod chat;
 pub mod classify;
-pub mod ext;
 
 use std::sync::Arc;
-
-pub trait ClientExtension {
-    fn request(&self, req: reqwest::Request) -> reqwest::Request {
-        req
-    }
-
-    fn response(&self, res: reqwest::Response) -> reqwest::Response {
-        res
-    }
-}
 
 #[derive(Default, Clone)]
 pub struct Client {

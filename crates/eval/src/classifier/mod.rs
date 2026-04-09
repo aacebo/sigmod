@@ -149,7 +149,7 @@ impl Evaluate for Scorer {
             category_scores.push((cat_score, category.weight));
         }
 
-        let score = weighted_avg(&category_scores);
+        let score = math::weighted_avg(&category_scores);
         let decision = if score >= self.threshold {
             Decision::Accept
         } else {
