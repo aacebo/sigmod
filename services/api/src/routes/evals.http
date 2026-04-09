@@ -1,0 +1,113 @@
+@base = http://localhost:8080
+
+### Classifier - topic detection
+POST {{base}}/evals HTTP/1.1
+content-type: application/json
+
+{
+  "input": "The mitochondria is the powerhouse of the cell. It generates ATP through oxidative phosphorylation.",
+  "scorers": [
+    {
+      "type": "classifier",
+      "model": "local/bart-mnli",
+      "top_k": 2,
+      "weight": 1.0,
+      "threshold": 0.3,
+      "categories": {
+        "topic": {
+          "top_k": 2,
+          "weight": 1.0,
+          "threshold": 0.3,
+          "labels": {
+            "science": { "weight": 1.0, "threshold": 0.3 },
+            "food": { "weight": 1.0, "threshold": 0.3 },
+            "sports": { "weight": 1.0, "threshold": 0.3 }
+          }
+        }
+      }
+    }
+  ]
+}
+
+### Judge - quality evaluation
+POST {{base}}/evals HTTP/1.1
+content-type: application/json
+
+{
+  "input": "The mitochondria is the powerhouse of the cell. It generates ATP through oxidative phosphorylation.",
+  "scorers": [
+    {
+      "type": "judge",
+      "model": "openai/gpt-4o-mini",
+      "access_token": "{{$processEnv OPENAI_API_KEY}}",
+      "name": "quality-judge",
+      "weight": 1.0,
+      "threshold": 0.5,
+      "criteria": [
+        { "description": "Is the text factually accurate?", "weight": 1.0, "threshold": 0.5 },
+        { "description": "Is the text coherent and well-structured?", "weight": 1.0, "threshold": 0.5 }
+      ]
+    }
+  ]
+}
+
+### Mixed - classifier + judge
+POST {{base}}/evals HTTP/1.1
+content-type: application/json
+
+{
+  "input": "Water boils at 100 degrees Celsius at standard atmospheric pressure.",
+  "scorers": [
+    {
+      "type": "classifier",
+      "model": "local/bart-mnli",
+      "top_k": 1,
+      "weight": 1.0,
+      "threshold": 0.3,
+      "categories": {
+        "topic": {
+          "top_k": 1,
+          "weight": 1.0,
+          "threshold": 0.3,
+          "labels": {
+            "science": { "weight": 1.0, "threshold": 0.3 },
+            "cooking": { "weight": 1.0, "threshold": 0.3 }
+          }
+        }
+      }
+    },
+    {
+      "type": "judge",
+      "model": "openai/gpt-4o-mini",
+      "access_token": "{{$processEnv OPENAI_API_KEY}}",
+      "name": "accuracy-judge",
+      "weight": 1.0,
+      "threshold": 0.5,
+      "criteria": [
+        { "description": "Is the text factually accurate?", "weight": 1.0, "threshold": 0.5 }
+      ]
+    }
+  ]
+}
+
+### Reject - gibberish text
+POST {{base}}/evals HTTP/1.1
+content-type: application/json
+
+{
+  "input": "asdf jkl qwerty uiop zxcv bnm",
+  "scorers": [
+    {
+      "type": "judge",
+      "model": "openai/gpt-4o-mini",
+      "access_token": "{{$processEnv OPENAI_API_KEY}}",
+      "name": "quality-judge",
+      "weight": 1.0,
+      "threshold": 0.7,
+      "criteria": [
+        { "description": "Is the text coherent and well-structured?", "weight": 1.0, "threshold": 0.7 },
+        { "description": "Is the text factually accurate?", "weight": 1.0, "threshold": 0.7 }
+      ]
+    }
+  ]
+}

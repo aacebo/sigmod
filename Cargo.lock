@@ -340,6 +340,7 @@ name = "api"
 version = "0.0.0"
 dependencies = [
  "actix-web",
+ "ai",
  "amqp",
  "chrono",
  "error",

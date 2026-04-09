@@ -33,7 +33,18 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("error while connecting to rabbitmq");
 
-    let ctx = Context::new(pool, amqp);
+    let classifier = ai::local::classify::LocalClassifierBuilder::new()
+        .build_async()
+        .await
+        .expect("Failed to build local classifier");
+
+    let classifier_client = ai::client::Client::new().with_classifier(classifier);
+    let chat_client = ai::client::Client::new().with_chat(ai::openai::OpenAIClient::new());
+    let runner = eval::Runner::new()
+        .with("local/bart-mnli".parse().unwrap(), classifier_client)
+        .with("openai/gpt-4o-mini".parse().unwrap(), chat_client);
+
+    let ctx = Context::new(pool, amqp, runner);
     println!("Starting server at http://0.0.0.0:{}", config.port);
 
     HttpServer::new(move || {

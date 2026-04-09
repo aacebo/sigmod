@@ -29,6 +29,7 @@ impl<'a> Context<'a> {
     }
 }
 
+#[derive(Clone)]
 pub struct Runner {
     registry: ai::model::ModelRegistry,
 }
