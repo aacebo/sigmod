@@ -84,6 +84,7 @@ impl Evaluate for Input {
             .as_chat()
             .ok_or_else(|| error::Error::new().with_message("no chat client configured"))?;
 
+        let started_at = chrono::Utc::now();
         let system_prompt = self.system_prompt();
         let req = ai::client::chat::ChatCompletionRequest::new(self.model.id.clone())
             .with_messages(vec![
@@ -178,6 +179,7 @@ impl Evaluate for Input {
         }
 
         let score = math::weighted_avg(&criterion_scores);
+        let elapse = chrono::Utc::now() - started_at;
         let decision = if score >= self.threshold {
             Decision::Accept
         } else {
@@ -191,7 +193,9 @@ impl Evaluate for Input {
         });
 
         Ok(Output {
-            meta: Meta::new().with(Meta::USAGE, usage)?,
+            meta: Meta::new()
+                .with(Meta::USAGE, usage)?
+                .with(Meta::ELAPSED_MS, format!("{}ms", elapse.num_milliseconds()))?,
             score,
             decision,
             reasoning: judge_response.reasoning,

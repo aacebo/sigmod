@@ -1262,6 +1262,7 @@ version = "0.0.0"
 dependencies = [
  "ai",
  "async-trait",
+ "chrono",
  "error",
  "serde",
  "serde_json",

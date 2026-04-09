@@ -15,7 +15,9 @@ doctest = false
 [dependencies]
 ai.path = "../ai"
 error.path = "../error"
+
 async-trait.workspace = true
+chrono.workspace = true
 ulid.workspace = true
 serde.workspace = true
 serde_json.workspace = true

@@ -71,6 +71,7 @@ impl Evaluate for Input {
 
         // Flatten all labels across categories into a single list for prediction.
         // Track (category_name, label_name) for each to map results back.
+        let started_at = chrono::Utc::now();
         let mut ai_labels: Vec<ai::client::classify::Label> = Vec::new();
         let mut label_index: Vec<(&str, &str)> = Vec::new();
 
@@ -152,6 +153,7 @@ impl Evaluate for Input {
         }
 
         let score = math::weighted_avg(&category_scores);
+        let elapse = chrono::Utc::now() - started_at;
         let decision = if score >= self.threshold {
             Decision::Accept
         } else {
@@ -159,7 +161,7 @@ impl Evaluate for Input {
         };
 
         Ok(Output {
-            meta: Meta::new(),
+            meta: Meta::new().with(Meta::ELAPSED_MS, format!("{}ms", elapse.num_milliseconds()))?,
             score,
             decision,
             categories: category_results,
