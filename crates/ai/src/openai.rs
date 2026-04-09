@@ -5,7 +5,6 @@ use crate::client::chat;
 
 const BASE_URL: &str = "https://api.openai.com/v1/chat/completions";
 
-#[derive(Default)]
 pub struct OpenAIClient {
     client: reqwest::Client,
 }
@@ -19,6 +18,12 @@ impl OpenAIClient {
 
     pub fn with_client(client: reqwest::Client) -> Self {
         Self { client }
+    }
+}
+
+impl Default for OpenAIClient {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

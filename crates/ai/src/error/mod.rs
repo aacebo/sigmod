@@ -6,6 +6,7 @@ pub use parse::*;
 pub enum Error {
     Parse(ParseError),
     Http(reqwest::Error),
+    RustBert(rust_bert::RustBertError),
 }
 
 impl From<ParseError> for Error {
@@ -20,11 +21,18 @@ impl From<reqwest::Error> for Error {
     }
 }
 
+impl From<rust_bert::RustBertError> for Error {
+    fn from(value: rust_bert::RustBertError) -> Self {
+        Self::RustBert(value)
+    }
+}
+
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Parse(v) => write!(f, "{}", v),
             Self::Http(v) => write!(f, "{}", v),
+            Self::RustBert(v) => write!(f, "{}", v),
         }
     }
 }
