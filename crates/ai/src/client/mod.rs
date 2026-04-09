@@ -1,5 +1,6 @@
 pub mod chat;
 pub mod classify;
+pub mod ext;
 
 use std::sync::Arc;
 

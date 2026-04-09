@@ -2,11 +2,10 @@ pub mod classifier;
 mod decision;
 pub mod judge;
 mod meta;
-mod model;
 
+pub use ai::model::{ModelId, ProviderId};
 pub use decision::*;
 pub use meta::*;
-pub use model::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -53,8 +52,15 @@ pub struct EvalResult {
     pub scorers: Vec<ScorerOutput>,
 }
 
+#[async_trait::async_trait]
 pub trait Evaluate {
-    fn evaluate(&self, text: &str) -> EvalResult;
+    type Output;
+
+    async fn evaluate(
+        &self,
+        text: &str,
+        client: &ai::client::Client,
+    ) -> Result<Self::Output, error::Error>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

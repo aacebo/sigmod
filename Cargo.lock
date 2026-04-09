@@ -1259,6 +1259,8 @@ dependencies = [
 name = "eval"
 version = "0.0.0"
 dependencies = [
+ "ai",
+ "async-trait",
  "error",
  "serde",
  "serde_json",

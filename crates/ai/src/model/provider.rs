@@ -1,6 +1,7 @@
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProviderId {
+    Local,
     OpenAI,
     Anthropic,
     HuggingFace,
@@ -11,6 +12,7 @@ pub enum ProviderId {
 impl ProviderId {
     pub fn as_str(&self) -> &str {
         match self {
+            Self::Local => "local",
             Self::OpenAI => "openai",
             Self::Anthropic => "anthropic",
             Self::HuggingFace => "huggingface",
@@ -22,6 +24,7 @@ impl ProviderId {
 impl From<String> for ProviderId {
     fn from(s: String) -> Self {
         match s.as_str() {
+            "local" => Self::Local,
             "openai" => Self::OpenAI,
             "anthropic" => Self::Anthropic,
             "huggingface" => Self::HuggingFace,

@@ -13,10 +13,9 @@ repository.workspace = true
 doctest = false
 
 [dependencies]
-# tch = { version = "0.17" }
-# console = { version = "0.16", features = ["std"] }
-# rust-bert = { version = "0.23" }
+ai.path = "../ai"
 error.path = "../error"
+async-trait.workspace = true
 ulid.workspace = true
 serde.workspace = true
 serde_json.workspace = true
