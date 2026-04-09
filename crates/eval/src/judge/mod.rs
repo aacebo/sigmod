@@ -110,8 +110,8 @@ impl Evaluate for Input {
                                     "properties": {
                                         "score": {
                                             "type": "number",
-                                            "min": "0",
-                                            "max": "1",
+                                            "minimum": 0,
+                                            "maximum": 1,
                                             "description": "criterion score"
                                         },
                                         "reasoning": {
@@ -124,10 +124,10 @@ impl Evaluate for Input {
                                 }
                             }
                         },
-                        "required": ["criteria"],
+                        "required": ["reasoning", "criteria"],
                         "additionalProperties": false
                     }),
-                    strict: Some(true),
+                    strict: None,
                 },
             });
 
