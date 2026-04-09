@@ -1,10 +1,19 @@
-use crate::{Context, Evaluate, classifier, judge};
+use crate::{Context, Decision, Evaluate, classifier, judge};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ScorerInput {
     Classifier(classifier::Input),
     Judge(judge::Input),
+}
+
+impl ScorerInput {
+    pub fn weight(&self) -> f32 {
+        match self {
+            Self::Classifier(v) => v.weight,
+            Self::Judge(v) => v.weight,
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -25,6 +34,16 @@ pub enum ScorerOutput {
     Classifier(classifier::Output),
     Judge(judge::Output),
     Error(error::Error),
+}
+
+impl ScorerOutput {
+    pub fn decision(&self) -> Decision {
+        match self {
+            Self::Classifier(v) => v.decision,
+            Self::Judge(v) => v.decision,
+            _ => Decision::Reject,
+        }
+    }
 }
 
 impl From<classifier::Output> for ScorerOutput {

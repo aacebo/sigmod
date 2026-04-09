@@ -1,4 +1,4 @@
-use crate::{Decision, EvalId, EvalRequest, EvalResult, Evaluate, Meta, ScorerOutput};
+use crate::{Decision, EvalId, EvalRequest, EvalResult, Evaluate, Meta, ScorerOutput, math};
 
 pub struct Context<'a> {
     id: EvalId,
@@ -62,11 +62,29 @@ impl Runner {
             });
         }
 
+        let scores: Vec<(f32, f32)> = req
+            .scorers
+            .iter()
+            .zip(scorers.iter())
+            .filter_map(|(input, output)| match output {
+                ScorerOutput::Error(_) => None,
+                ScorerOutput::Classifier(o) => Some((o.score, input.weight())),
+                ScorerOutput::Judge(o) => Some((o.score, input.weight())),
+            })
+            .collect();
+
+        let score = math::weighted_avg(&scores);
+        let decision = if scorers.iter().any(|v| v.decision() == Decision::Reject) {
+            Decision::Reject
+        } else {
+            Decision::Accept
+        };
+
         EvalResult {
             meta: ctx.meta,
             id,
-            score: 0.0,
-            decision: Decision::Accept,
+            score,
+            decision,
             scorers,
         }
     }

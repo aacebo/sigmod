@@ -154,10 +154,9 @@ impl Evaluate for Input {
         let mut criterion_scores: Vec<(f32, f32)> = Vec::new();
 
         for (i, criterion) in self.criteria.iter().enumerate() {
-            let judge_criterion = judge_response
-                .criteria
-                .get(i)
-                .expect("judge did not score all criterion");
+            let judge_criterion = judge_response.criteria.get(i).ok_or_else(|| {
+                error::Error::new().with_message("judge did not score all criteria")
+            })?;
 
             criterion_results.push(CriterionResult {
                 score: judge_criterion.score,

@@ -43,9 +43,7 @@ impl Meta {
     }
 
     pub fn merge(&mut self, other: Self) {
-        for (key, value) in other.0 {
-            let _ = self.set(key, value);
-        }
+        self.0.extend(other.0);
     }
 }
 
