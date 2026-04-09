@@ -5,7 +5,7 @@ use crate::RequestContext;
 #[post("/evals")]
 pub async fn create(ctx: RequestContext, payload: web::Json<eval::EvalRequest>) -> HttpResponse {
     let _ctx = ctx.context();
-    let _text = payload.into_inner().text;
+    let _req = payload.into_inner();
 
     HttpResponse::Ok().finish()
 }

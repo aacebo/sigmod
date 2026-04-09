@@ -4,56 +4,13 @@ pub mod judge;
 pub mod math;
 mod meta;
 mod run;
+mod score;
 
 pub use ai::model::{ModelId, ProviderId};
 pub use decision::*;
 pub use meta::*;
 pub use run::*;
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum ScorerInput {
-    Classifier(classifier::Input),
-    Judge(judge::Input),
-}
-
-#[async_trait::async_trait]
-impl Evaluate for ScorerInput {
-    type Output = ScorerOutput;
-
-    async fn evaluate(&self, ctx: &mut Context) -> Result<Self::Output, error::Error> {
-        Ok(match self {
-            Self::Classifier(v) => v.evaluate(ctx).await?.into(),
-            Self::Judge(v) => v.evaluate(ctx).await?.into(),
-        })
-    }
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum ScorerOutput {
-    Classifier(classifier::Output),
-    Judge(judge::Output),
-    Error(error::Error),
-}
-
-impl From<classifier::Output> for ScorerOutput {
-    fn from(value: classifier::Output) -> Self {
-        Self::Classifier(value)
-    }
-}
-
-impl From<judge::Output> for ScorerOutput {
-    fn from(value: judge::Output) -> Self {
-        Self::Judge(value)
-    }
-}
-
-impl From<error::Error> for ScorerOutput {
-    fn from(value: error::Error) -> Self {
-        Self::Error(value)
-    }
-}
+pub use score::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct EvalRequest {
@@ -63,7 +20,7 @@ pub struct EvalRequest {
 
     /// the input text being evaluated.
     #[validate(min_length = 3)]
-    pub text: String,
+    pub input: String,
 
     /// the scorers to use.
     #[validate(min_items = 1)]
@@ -75,6 +32,9 @@ pub struct EvalResult {
     /// metadata
     #[serde(rename = "$meta")]
     pub meta: Meta,
+
+    /// the eval id.
+    pub id: EvalId,
 
     /// the score.
     pub score: f32,
@@ -98,6 +58,10 @@ pub struct EvalId(ulid::Ulid);
 
 impl EvalId {
     const PREFIX: &str = "eval_";
+
+    pub fn new() -> Self {
+        Self(ulid::Ulid::new())
+    }
 }
 
 impl std::str::FromStr for EvalId {

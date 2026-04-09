@@ -1,15 +1,15 @@
-use crate::Meta;
+use crate::{Decision, EvalId, EvalRequest, EvalResult, Evaluate, Meta, ScorerOutput};
 
-#[derive(Default)]
-pub struct Context {
+pub struct Context<'a> {
+    id: EvalId,
     meta: Meta,
-    input: String,
-    registry: ai::model::ModelRegistry,
+    input: &'a str,
+    registry: &'a ai::model::ModelRegistry,
 }
 
-impl Context {
-    pub fn new() -> Self {
-        Self::default()
+impl<'a> Context<'a> {
+    pub fn id(&self) -> EvalId {
+        self.id
     }
 
     pub fn meta(&self) -> &Meta {
@@ -29,41 +29,45 @@ impl Context {
     }
 }
 
-pub struct ContextBuilder {
-    meta: Meta,
-    input: String,
+pub struct Runner {
     registry: ai::model::ModelRegistry,
 }
 
-impl ContextBuilder {
-    pub fn new(input: String) -> Self {
+impl Runner {
+    pub fn new() -> Self {
         Self {
-            meta: Meta::default(),
-            input,
-            registry: ai::model::ModelRegistry::default(),
+            registry: ai::model::ModelRegistry::new(),
         }
     }
 
-    pub fn registry(mut self, registry: ai::model::ModelRegistry) -> Self {
-        self.registry = registry;
-        self
-    }
-
-    pub fn client(mut self, model: ai::model::ModelId, client: ai::client::Client) -> Self {
+    pub fn with(mut self, model: ai::model::ModelId, client: ai::client::Client) -> Self {
         self.registry.register(model, client);
         self
     }
 
-    pub fn meta(mut self, value: Meta) -> Self {
-        self.meta = value;
-        self
-    }
+    pub async fn evaluate(&self, req: &EvalRequest) -> EvalResult {
+        let id = EvalId::new();
+        let mut scorers: Vec<ScorerOutput> = vec![];
+        let mut ctx = Context {
+            id,
+            meta: Meta::new(),
+            input: &req.input,
+            registry: &self.registry,
+        };
 
-    pub fn build(self) -> Context {
-        Context {
-            meta: self.meta,
-            input: self.input,
-            registry: self.registry,
+        for input in &req.scorers {
+            scorers.push(match input.evaluate(&mut ctx).await {
+                Err(err) => err.into(),
+                Ok(v) => v.into(),
+            });
+        }
+
+        EvalResult {
+            meta: ctx.meta,
+            id,
+            score: 0.0,
+            decision: Decision::Accept,
+            scorers,
         }
     }
 }
