@@ -53,6 +53,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(RequestContextMiddleware)
             .service(routes::index::get)
             .service(routes::evals::create)
+            .configure(routes::console::configure)
     })
     .bind(("0.0.0.0", config.port))?
     .run()

@@ -110,9 +110,7 @@ impl Evaluate for Input {
                                     "properties": {
                                         "score": {
                                             "type": "number",
-                                            "minimum": 0,
-                                            "maximum": 1,
-                                            "description": "criterion score"
+                                            "description": "criterion score as a decimal between 0.0 and 1.0 where 0.0 is the worst and 1.0 is the best"
                                         },
                                         "reasoning": {
                                             "type": "string",
@@ -159,19 +157,21 @@ impl Evaluate for Input {
                 error::Error::new().with_message("judge did not score all criteria")
             })?;
 
-            let decision = if judge_criterion.score >= criterion.threshold {
+            let score = judge_criterion.score.clamp(0.0, 1.0);
+
+            let decision = if score >= criterion.threshold {
                 Decision::Accept
             } else {
                 Decision::Reject
             };
 
             criterion_results.push(CriterionResult {
-                score: judge_criterion.score,
+                score,
                 reasoning: judge_criterion.reasoning.clone(),
                 decision,
             });
 
-            criterion_scores.push((judge_criterion.score, criterion.weight));
+            criterion_scores.push((score, criterion.weight));
             criterion_decisions.push(decision);
         }
 

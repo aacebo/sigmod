@@ -1,0 +1,22 @@
+<div data-criterion data-removable class="border border-gray-200 bg-gray-50 rounded p-2">
+    <div class="flex items-center justify-between mb-1">
+        <span class="text-xs text-gray-400">Criterion</span>
+        <button type="button" onclick="removeElement(this)" class="text-gray-400 hover:text-red-500 text-xs">&times;</button>
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+        <div class="col-span-3">
+            <input data-field="crit-description" type="text" value="{{ criterion.description }}" placeholder="Description (required)"
+                class="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-400 mb-0.5">Weight</label>
+            <input data-field="crit-weight" type="number" value="{{ criterion.weight }}" min="0" max="1" step="0.05"
+                class="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+        </div>
+        <div>
+            <label class="block text-xs text-gray-400 mb-0.5">Threshold</label>
+            <input data-field="crit-threshold" type="number" value="{{ criterion.threshold }}" min="0" max="1" step="0.05"
+                class="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500" />
+        </div>
+    </div>
+</div>

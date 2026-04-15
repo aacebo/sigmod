@@ -13,6 +13,10 @@ impl Meta {
         Self::default()
     }
 
+    pub fn elapsed_ms(&self) -> Option<&str> {
+        self.0.get(Self::ELAPSED_MS).and_then(|v| v.as_str())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
