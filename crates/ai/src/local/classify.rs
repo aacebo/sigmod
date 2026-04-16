@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use rust_bert::pipelines::common::{ModelResource, ModelType};
@@ -81,8 +81,14 @@ impl LocalClassifierBuilder {
     pub fn build(self) -> Result<LocalClassifierClient, Error> {
         let model = ZeroShotClassificationModel::new(self.config)?;
         Ok(LocalClassifierClient {
-            model: Mutex::new(model),
+            model: Arc::new(Mutex::new(model)),
         })
+    }
+
+    pub async fn build_async(self) -> Result<LocalClassifierClient, Error> {
+        tokio::task::spawn_blocking(move || self.build())
+            .await
+            .expect("spawn_blocking panicked")
     }
 }
 
@@ -93,7 +99,7 @@ impl Default for LocalClassifierBuilder {
 }
 
 pub struct LocalClassifierClient {
-    model: Mutex<ZeroShotClassificationModel>,
+    model: Arc<Mutex<ZeroShotClassificationModel>>,
 }
 
 #[async_trait]
@@ -104,9 +110,17 @@ impl ClassificationClient for LocalClassifierClient {
         labels: &[Label],
         max_length: usize,
     ) -> Result<Vec<Vec<LabelResult>>, Error> {
-        let label_names: Vec<&str> = labels.iter().map(|l| l.name.as_str()).collect();
-        let model = self.model.lock().unwrap();
-        let results = model.predict_multilabel(inputs, &label_names, None, max_length)?;
+        let model = Arc::clone(&self.model);
+        let owned_inputs: Vec<String> = inputs.iter().map(|s| s.to_string()).collect();
+        let owned_names: Vec<String> = labels.iter().map(|l| l.name.clone()).collect();
+        let results = tokio::task::spawn_blocking(move || {
+            let input_refs: Vec<&str> = owned_inputs.iter().map(|s| s.as_str()).collect();
+            let name_refs: Vec<&str> = owned_names.iter().map(|s| s.as_str()).collect();
+            let model = model.lock().unwrap();
+            model.predict_multilabel(&input_refs, &name_refs, None, max_length)
+        })
+        .await
+        .expect("spawn_blocking panicked")?;
 
         Ok(results
             .into_iter()

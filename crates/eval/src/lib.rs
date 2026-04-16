@@ -1,40 +1,28 @@
 pub mod classifier;
+mod consensus;
 mod decision;
 pub mod judge;
+pub mod math;
 mod meta;
-mod model;
+mod run;
+mod score;
 
+pub use ai::model::{ModelId, ProviderId};
+pub use consensus::*;
 pub use decision::*;
 pub use meta::*;
-pub use model::*;
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum Scorer {
-    Classifier(classifier::Scorer),
-    Judge(judge::Scorer),
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum ScorerOutput {
-    Classifier(classifier::Output),
-    Judge(judge::Output),
-}
+pub use run::*;
+pub use score::*;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct EvalRequest {
-    /// request identifier.
-    #[serde(default)]
-    pub request_id: Option<String>,
-
     /// the input text being evaluated.
     #[validate(min_length = 3)]
-    pub text: String,
+    pub input: String,
 
     /// the scorers to use.
     #[validate(min_items = 1)]
-    pub scorers: Vec<Scorer>,
+    pub scorers: Vec<ScorerInput>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -42,6 +30,9 @@ pub struct EvalResult {
     /// metadata
     #[serde(rename = "$meta")]
     pub meta: Meta,
+
+    /// the eval id.
+    pub id: EvalId,
 
     /// the score.
     pub score: f32,
@@ -53,8 +44,11 @@ pub struct EvalResult {
     pub scorers: Vec<ScorerOutput>,
 }
 
+#[async_trait::async_trait]
 pub trait Evaluate {
-    fn evaluate(&self, text: &str) -> EvalResult;
+    type Output;
+
+    async fn evaluate(&self, ctx: &mut Context) -> Result<Self::Output, error::Error>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -62,6 +56,10 @@ pub struct EvalId(ulid::Ulid);
 
 impl EvalId {
     const PREFIX: &str = "eval_";
+
+    pub fn new() -> Self {
+        Self(ulid::Ulid::new())
+    }
 }
 
 impl std::str::FromStr for EvalId {

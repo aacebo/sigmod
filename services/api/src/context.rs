@@ -8,14 +8,16 @@ use storage::Storage;
 pub struct Context {
     pool: PgPool,
     amqp: Socket,
+    runner: eval::Runner,
     start_time: DateTime<Utc>,
 }
 
 impl Context {
-    pub fn new(pool: PgPool, amqp: Socket) -> Self {
+    pub fn new(pool: PgPool, amqp: Socket, runner: eval::Runner) -> Self {
         Self {
             pool,
             amqp,
+            runner,
             start_time: Utc::now(),
         }
     }
@@ -34,5 +36,9 @@ impl Context {
 
     pub fn amqp(&self) -> &Socket {
         &self.amqp
+    }
+
+    pub fn runner(&self) -> &eval::Runner {
+        &self.runner
     }
 }

@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Sigmod Console — Eval Playground{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Eval Playground</h1>
+
+    <form id="eval-form" class="space-y-6">
+        <div>
+            <label for="input" class="block text-sm font-medium text-gray-700 mb-1">Input Text</label>
+            <textarea id="input" name="input" rows="4" required minlength="3"
+                class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Enter text to evaluate (min 3 characters)...">{{ state.input }}</textarea>
+        </div>
+
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-semibold text-gray-800">Scorers</h2>
+                <div class="flex gap-2">
+                    <button type="button"
+                        hx-post="/console/scorer?type=classifier"
+                        hx-target="#scorers"
+                        hx-swap="beforeend"
+                        class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+                        + Classifier
+                    </button>
+                    <button type="button"
+                        hx-post="/console/scorer?type=judge"
+                        hx-target="#scorers"
+                        hx-swap="beforeend"
+                        class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700">
+                        + Judge
+                    </button>
+                </div>
+            </div>
+            <div id="scorers" class="space-y-4">
+                {% for scorer in state.scorers.iter() %}
+                    {% match scorer %}
+                        {% when ConsoleScorer::Classifier(classifier) %}
+                            {% include "console/partials/scorer_classifier.html" %}
+                        {% when ConsoleScorer::Judge(judge) %}
+                            {% include "console/partials/scorer_judge.html" %}
+                    {% endmatch %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="button" id="submit-btn"
+            class="w-full py-2.5 px-4 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onclick="submitEval()">
+            <span id="submit-text">Submit Eval</span>
+            <span id="submit-spinner" class="hidden">
+                <svg class="inline animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Evaluating...
+            </span>
+        </button>
+    </form>
+
+    <div id="results" class="mt-8"></div>
+</div>
+
+<script>
+function buildState() {
+    const input = document.getElementById('input').value;
+    const scorers = [];
+
+    document.querySelectorAll('[data-scorer]').forEach(el => {
+        const type = el.dataset.scorerType;
+
+        if (type === 'classifier') {
+            const categories = {};
+            el.querySelectorAll('[data-category]').forEach(catEl => {
+                const catName = catEl.querySelector('[data-field="cat-name"]').value;
+                if (!catName) return;
+                const labels = {};
+                catEl.querySelectorAll('[data-label]').forEach(lblEl => {
+                    const lblName = lblEl.querySelector('[data-field="label-name"]').value;
+                    if (!lblName) return;
+                    labels[lblName] = {
+                        weight: parseFloat(lblEl.querySelector('[data-field="label-weight"]').value),
+                        threshold: parseFloat(lblEl.querySelector('[data-field="label-threshold"]').value),
+                        description: lblEl.querySelector('[data-field="label-description"]').value || null,
+                    };
+                });
+                categories[catName] = {
+                    consensus: catEl.querySelector('[data-field="cat-consensus"]').value,
+                    weight: parseFloat(catEl.querySelector('[data-field="cat-weight"]').value),
+                    threshold: parseFloat(catEl.querySelector('[data-field="cat-threshold"]').value),
+                    labels,
+                };
+            });
+
+            scorers.push({
+                type: 'classifier',
+                model: el.querySelector('[data-field="model"]').value,
+                consensus: el.querySelector('[data-field="consensus"]').value,
+                weight: parseFloat(el.querySelector('[data-field="weight"]').value),
+                threshold: parseFloat(el.querySelector('[data-field="threshold"]').value),
+                categories,
+            });
+        } else if (type === 'judge') {
+            const criteria = [];
+            el.querySelectorAll('[data-criterion]').forEach(critEl => {
+                criteria.push({
+                    description: critEl.querySelector('[data-field="crit-description"]').value,
+                    weight: parseFloat(critEl.querySelector('[data-field="crit-weight"]').value),
+                    threshold: parseFloat(critEl.querySelector('[data-field="crit-threshold"]').value),
+                });
+            });
+
+            scorers.push({
+                type: 'judge',
+                model: el.querySelector('[data-field="model"]').value,
+                access_token: el.querySelector('[data-field="access-token"]').value,
+                name: el.querySelector('[data-field="name"]').value,
+                consensus: el.querySelector('[data-field="consensus"]').value,
+                weight: parseFloat(el.querySelector('[data-field="weight"]').value),
+                threshold: parseFloat(el.querySelector('[data-field="threshold"]').value),
+                prompt: el.querySelector('[data-field="prompt"]').value,
+                criteria,
+            });
+        }
+    });
+
+    return { input, scorers };
+}
+
+function saveState() {
+    const state = buildState();
+    const url = '/console?state=' + encodeURIComponent(JSON.stringify(state));
+    history.replaceState(null, '', url);
+}
+
+// Save on any form input/change
+document.getElementById('eval-form').addEventListener('input', saveState);
+document.getElementById('eval-form').addEventListener('change', saveState);
+
+// Save after htmx inserts new fragments
+document.body.addEventListener('htmx:afterSwap', saveState);
+
+function submitEval() {
+    const btn = document.getElementById('submit-btn');
+    const text = document.getElementById('submit-text');
+    const spinner = document.getElementById('submit-spinner');
+    btn.disabled = true;
+    text.classList.add('hidden');
+    spinner.classList.remove('hidden');
+
+    const state = buildState();
+    const payload = {
+        input: state.input,
+        scorers: state.scorers.map(s => {
+            const out = { ...s, consensus: parseConsensus(s.consensus) };
+            if (s.type === 'classifier') {
+                const cats = {};
+                for (const [k, v] of Object.entries(s.categories || {})) {
+                    cats[k] = { ...v, consensus: parseConsensus(v.consensus) };
+                }
+                out.categories = cats;
+            }
+            return out;
+        }),
+    };
+
+    fetch('/console/eval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.text())
+    .then(html => {
+        document.getElementById('results').innerHTML = html;
+    })
+    .catch(err => {
+        document.getElementById('results').innerHTML =
+            '<div class="p-4 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">' +
+            'Error: ' + err.message + '</div>';
+    })
+    .finally(() => {
+        btn.disabled = false;
+        text.classList.remove('hidden');
+        spinner.classList.add('hidden');
+    });
+}
+
+function parseConsensus(value) {
+    if (value.startsWith('top_k:')) {
+        return { type: 'top_k', k: parseInt(value.split(':')[1]) };
+    }
+    return { type: value };
+}
+
+function removeElement(el) {
+    el.closest('[data-removable]').remove();
+    saveState();
+}
+</script>
+{% endblock %}

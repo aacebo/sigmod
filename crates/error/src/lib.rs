@@ -72,7 +72,7 @@ impl Error {
 impl<T: std::error::Error + Send + Sync + 'static> From<T> for Error {
     fn from(value: T) -> Self {
         Self {
-            message: None,
+            message: Some(value.to_string()),
             fields: BTreeMap::new(),
             backtrace: None,
             inner: Some(Arc::new(value)),

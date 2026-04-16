@@ -1,0 +1,53 @@
+@base = http://localhost:8080
+
+### Group chat - should respond
+POST {{base}}/evals HTTP/1.1
+content-type: application/json
+
+{
+  "input": "Hey @assistant, do you know what time the deployment is scheduled for today? Also, has anyone seen Jake?",
+  "scorers": [
+    {
+      "type": "classifier",
+      "model": "local/bart-mnli",
+      "categories": {
+        "intent": {
+          "labels": {
+            "direct-mention": {},
+            "question": {},
+            "casual-chat": {}
+          }
+        },
+        "relevance": {
+          "labels": {
+            "scheduling": {},
+            "deployment": {},
+            "off-topic": {}
+          }
+        }
+      }
+    },
+    {
+      "type": "judge",
+      "model": "openai/gpt-4o-mini",
+      "access_token": "{{$processEnv OPENAI_API_KEY}}",
+      "name": "address-judge",
+      "prompt": "You are evaluating whether a message in a group chat is directed at an AI assistant or explicitly requests the assistant's input. Consider @mentions, direct questions, and implicit requests for help.",
+      "criteria": [
+        { "description": "Is the message explicitly addressed to the assistant (e.g. @mention, by name, or 'hey bot')?" },
+        { "description": "Does the message ask a question or request information that the assistant is expected to answer?" }
+      ]
+    },
+    {
+      "type": "judge",
+      "model": "openai/gpt-4o-mini",
+      "access_token": "{{$processEnv OPENAI_API_KEY}}",
+      "name": "relevance-judge",
+      "prompt": "You are evaluating whether an AI assistant would have useful contextual knowledge to contribute to this group chat message. The assistant has access to deployment schedules, project timelines, and technical documentation. It does not know personal whereabouts of team members.",
+      "criteria": [
+        { "description": "Does the message contain a topic the assistant has relevant knowledge about (e.g. deployments, schedules, technical info)?" },
+        { "description": "Would the assistant's response add value rather than being noise in the group chat?" }
+      ]
+    }
+  ]
+}

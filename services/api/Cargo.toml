@@ -11,10 +11,13 @@ repository.workspace = true
 
 [dependencies]
 actix-web = "4"
+askama = "0.15"
 amqp.path = "../../crates/amqp"
+ai.path = "../../crates/ai"
 eval.path = "../../crates/eval"
 error.path = "../../crates/error"
 storage.path = "../../crates/storage"
+
 uuid.workspace = true
 chrono.workspace = true
 serde.workspace = true

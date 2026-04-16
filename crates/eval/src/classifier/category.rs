@@ -1,16 +1,15 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    Decision,
+    ConsensusStrategy, Decision,
     classifier::{Label, LabelResult},
 };
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, serde_valid::Validate)]
 pub struct Category {
-    /// Number of top labels to consider for this category
-    #[serde(default = "Category::default_top_k")]
-    #[validate(minimum = 1)]
-    pub top_k: usize,
+    /// Consensus strategy for aggregating label scores.
+    #[serde(default)]
+    pub consensus: ConsensusStrategy,
 
     /// Weight applied to score when calculating importance.
     #[serde(default = "Category::default_weight")]
@@ -30,10 +29,6 @@ pub struct Category {
 }
 
 impl Category {
-    fn default_top_k() -> usize {
-        2
-    }
-
     fn default_weight() -> f32 {
         1.0
     }
@@ -45,7 +40,7 @@ impl Category {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CategoryResult {
-    /// the top_k score of the category labels.
+    /// the aggregated score of the category labels.
     pub score: f32,
 
     /// decision

@@ -15,9 +15,8 @@ pub struct Criterion {
     pub threshold: f32,
 
     /// Describes the criterions meaning/hypothesis.
-    #[serde(default)]
     #[validate(min_length = 1)]
-    pub description: Option<String>,
+    pub description: String,
 }
 
 impl Criterion {
