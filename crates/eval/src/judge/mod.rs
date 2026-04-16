@@ -58,11 +58,22 @@ impl Input {
     }
 
     fn system_prompt(&self) -> String {
-        let mut prompt = self.prompt.clone().unwrap_or(String::from("You are a judge tasked with scoring the users message text against the following criterion:"));
+        let mut prompt = self.prompt.clone().unwrap_or(String::from(
+            "You are a judge tasked with scoring the users message text against the following criteria.",
+        ));
 
         for (i, criterion) in self.criteria.iter().enumerate() {
             let _ = write!(prompt, "\n#{} => {}", i + 1, criterion.description);
         }
+
+        let _ = write!(
+            prompt,
+            "\n\nYou MUST return exactly {} criteria scores in order. \
+            Score each criterion as a decimal between 0.0 and 1.0. \
+            Use the full range, not just 0 or 1. \
+            For example: 0.0-0.3 means largely unmet, 0.3-0.7 means partially met, 0.7-1.0 means mostly or fully met.",
+            self.criteria.len()
+        );
 
         prompt
     }
@@ -105,6 +116,8 @@ impl Evaluate for Input {
                             "reasoning": { "type": "string" },
                             "criteria": {
                                 "type": "array",
+                                "minItems": self.criteria.len(),
+                                "maxItems": self.criteria.len(),
                                 "items": {
                                     "type": "object",
                                     "properties": {
@@ -125,7 +138,7 @@ impl Evaluate for Input {
                         "required": ["reasoning", "criteria"],
                         "additionalProperties": false
                     }),
-                    strict: None,
+                    strict: Some(true),
                 },
             });
 

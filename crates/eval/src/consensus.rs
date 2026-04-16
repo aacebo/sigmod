@@ -139,7 +139,10 @@ impl ConsensusStrategy {
                 (score, decision)
             }
             ConsensusStrategy::AtLeastOne => {
-                let score = math::weighted_avg(items);
+                let score = items
+                    .iter()
+                    .map(|(s, _)| *s)
+                    .fold(0.0f32, f32::max);
                 let decision = if decisions.iter().any(|d| *d == Decision::Accept) {
                     Decision::Accept
                 } else {
